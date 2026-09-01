@@ -1,0 +1,558 @@
+[2026-05-13 21:56:54] ==================================================
+[2026-05-13 21:56:54] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-05-13 21:56:54] ==================================================
+[2026-05-13 21:56:56] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-05-13 21:56:56] 
+--- DATASET 1: Crop Data (merged_ml_dataset.csv) ---
+[2026-05-13 21:56:56]   -> Total Records: 20
+[2026-05-13 21:56:56]   -> Features Count: 8
+[2026-05-13 21:56:56]   -> Training Set (80%): 16 records
+[2026-05-13 21:56:56]   -> Testing Set (20%): 4 records
+[2026-05-13 21:56:56] 
+  -> Training Classical Model: Random Forest...
+[2026-05-13 21:56:57]   -> ✅ Random Forest Accuracy on Test Data: 25.00%
+[2026-05-13 21:56:57]   -> Training Quantum Model: VQC (Crop)...
+[2026-05-13 21:56:57]   -> ✅ QML (Crop) inference complete.
+[2026-05-13 21:56:57] 
+--- DATASET 2: Yield Data (crop_production_karnataka.csv) ---
+[2026-05-13 21:56:57]   -> Total Records: 40
+[2026-05-13 21:56:57]   -> Features Count: 4
+[2026-05-13 21:56:57]   -> Training Set (80%): 32 records
+[2026-05-13 21:56:57]   -> Testing Set (20%): 8 records
+[2026-05-13 21:56:57] 
+  -> Training Classical Model: XGBoost...
+[2026-05-13 21:56:57]   -> ✅ XGBoost R2 Score on Test Data: -1.08
+[2026-05-13 21:56:57]   -> Training Quantum Model: VQC (Yield)...
+[2026-05-13 21:56:57]   -> ✅ QML (Yield) inference complete.
+[2026-05-13 21:56:57] 
+--- DATASET 3: Seed Data (seed_viability_data.csv) ---
+[2026-05-13 21:56:57]   -> Total Records: 12
+[2026-05-13 21:56:57]   -> Features Count: 3
+[2026-05-13 21:56:57]   -> Training Set (80%): 9 records
+[2026-05-13 21:56:57]   -> Testing Set (20%): 3 records
+[2026-05-13 21:56:57] 
+  -> Training Classical Model: SVM...
+[2026-05-13 21:56:57]   -> ✅ SVM Accuracy on Test Data: 33.33%
+[2026-05-13 21:56:57]   -> Training Quantum Model: VQC (Seed)...
+[2026-05-13 21:56:57]   -> ✅ QML (Seed) inference complete.
+[2026-05-13 21:56:57] 
+--- META MODEL INTEGRATION ---
+[2026-05-13 21:56:57] Gathering Output Vectors:
+[2026-05-13 21:56:57]  1. Classical Crop (RF) + Quantum Crop (VQC)
+[2026-05-13 21:56:57]  2. Classical Yield (XGB) + Quantum Yield (VQC)
+[2026-05-13 21:56:57]  3. Classical Seed (SVM) + Quantum Seed (VQC)
+[2026-05-13 21:56:57] 
+  -> Training Final Meta-Model (Logistic Regression)...
+[2026-05-13 21:56:57]   -> Meta-Model Training Set: 2 records
+[2026-05-13 21:56:57]   -> Meta-Model Testing Set: 1 records
+[2026-05-13 21:56:57] 🚀 Meta-Model trained successfully with 100.00% validation accuracy.
+[2026-05-13 21:56:57] ✅ Meta Model saved to models/meta_model.pkl
+[2026-05-13 21:56:57] Pipeline execution finished gracefully.
+
+[2026-06-15 00:30:06] ==================================================
+[2026-06-15 00:30:06] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-06-15 00:30:06] ==================================================
+[2026-06-15 00:30:06] Scanning datasets...
+[2026-06-15 00:30:06] Generating mock datasets to allow pipeline run...
+[2026-06-15 00:30:06] Generated mock datasets in data/ folder successfully.
+[2026-06-15 00:30:07] Detected Crop dataset: data\merged_ml_dataset.csv
+[2026-06-15 00:30:07] Detected Yield dataset: data\crop_production_karnataka.csv
+[2026-06-15 00:30:07] Detected Seed dataset: data\seed_viability_data.csv
+[2026-06-15 00:30:14] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-06-15 00:30:14] 
+--- DATASET 1: Crop Data ---
+[2026-06-15 00:30:14]   -> Total Records: 100
+[2026-06-15 00:30:14]   -> Features Count: 7
+[2026-06-15 00:30:14]   -> Classes Count: 5
+[2026-06-15 00:30:14]   -> Training Classical Model: Random Forest...
+[2026-06-15 00:30:15]   -> ✅ RF Accuracy: 20.00%
+[2026-06-15 00:30:15] Registered model rf_model.pkl in training_registry.json
+[2026-06-15 00:30:15]   -> Training Quantum Model: Simulated VQC (Crop)...
+[2026-06-15 00:30:15]   -> ✅ Simulated VQC Accuracy: 30.00%
+[2026-06-15 00:30:15] Registered model vqc_crop_model.pkl in training_registry.json
+[2026-06-15 00:30:15] 
+--- DATASET 2: Yield Data ---
+[2026-06-15 00:30:15]   -> Total Records: 100
+[2026-06-15 00:30:15]   -> Features Count: 3
+[2026-06-15 00:30:15]   -> Training Classical Model: XGBoost...
+[2026-06-15 00:30:19]   -> ✅ XGBoost R2 Score: -1.46
+[2026-06-15 00:30:19] Registered model xgb_model.pkl in training_registry.json
+[2026-06-15 00:30:19]   -> Training Quantum Model: Simulated VQR (Yield)...
+[2026-06-15 00:30:19]   -> ✅ Simulated VQR R2 Score: -0.61
+[2026-06-15 00:30:19] Registered model vqc_yield_model.pkl in training_registry.json
+[2026-06-15 00:30:19] 
+--- DATASET 3: Seed Data ---
+[2026-06-15 00:30:19]   -> Total Records: 100
+[2026-06-15 00:30:19]   -> Features Count: 2
+[2026-06-15 00:30:19]   -> Training Classical Model: SVM...
+[2026-06-15 00:30:19]   -> ✅ SVM Accuracy: 55.00%
+[2026-06-15 00:30:19] Registered model svm_model.pkl in training_registry.json
+[2026-06-15 00:30:19]   -> Training Quantum Model: Simulated VQC (Seed)...
+[2026-06-15 00:30:19]   -> ✅ Simulated VQC Seed Accuracy: 65.00%
+[2026-06-15 00:30:19] Registered model vqc_seed_model.pkl in training_registry.json
+[2026-06-15 00:30:20] 
+--- META MODEL INTEGRATION ---
+[2026-06-15 00:30:20] 🚀 Meta-Model trained successfully with 75.00% validation accuracy.
+[2026-06-15 00:30:20] Registered model meta_model.pkl in training_registry.json
+[2026-06-15 00:30:20] Pipeline execution finished gracefully.
+
+[2026-06-16 10:39:33] ==================================================
+[2026-06-16 10:39:33] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-06-16 10:39:33] ==================================================
+[2026-06-16 10:39:33] Scanning datasets...
+[2026-06-16 10:39:33] Generating realistic correlated mock datasets to allow pipeline run...
+[2026-06-16 10:39:33] Generated realistic mock datasets in data/ folder successfully.
+[2026-06-16 10:39:33] Detected Crop dataset: data\merged_ml_dataset.csv
+[2026-06-16 10:39:33] Detected Yield dataset: data\crop_production_karnataka.csv
+[2026-06-16 10:39:33] Detected Seed dataset: data\seed_viability_data.csv
+[2026-06-16 10:39:38] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-06-16 10:39:38] 
+--- DATASET 1: Crop Data ---
+[2026-06-16 10:39:38]   -> Total Records: 100
+[2026-06-16 10:39:38]   -> Features Count: 7
+[2026-06-16 10:39:38]   -> Classes Count: 5
+[2026-06-16 10:39:38]   -> Training Classical Model: Random Forest...
+[2026-06-16 10:39:39]   -> ✅ RF Accuracy: 100.00%
+[2026-06-16 10:39:39] Registered model rf_model.pkl in training_registry.json
+[2026-06-16 10:39:39]   -> Training Quantum Model: Simulated VQC (Crop)...
+[2026-06-16 10:39:39]   -> ✅ Simulated VQC Accuracy: 60.00%
+[2026-06-16 10:39:39] Registered model vqc_crop_model.pkl in training_registry.json
+[2026-06-16 10:39:39] 
+--- DATASET 2: Yield Data ---
+[2026-06-16 10:39:39]   -> Total Records: 100
+[2026-06-16 10:39:39]   -> Features Count: 3
+[2026-06-16 10:39:39]   -> Training Classical Model: XGBoost...
+[2026-06-16 10:39:40]   -> ✅ XGBoost R2 Score: 0.94
+[2026-06-16 10:39:40] Registered model xgb_model.pkl in training_registry.json
+[2026-06-16 10:39:40]   -> Training Quantum Model: Simulated VQR (Yield)...
+[2026-06-16 10:39:40]   -> ✅ Simulated VQR R2 Score: -1.22
+[2026-06-16 10:39:40] Registered model vqc_yield_model.pkl in training_registry.json
+[2026-06-16 10:39:40] 
+--- DATASET 3: Seed Data ---
+[2026-06-16 10:39:40]   -> Total Records: 100
+[2026-06-16 10:39:40]   -> Features Count: 2
+[2026-06-16 10:39:40]   -> Training Classical Model: SVM...
+[2026-06-16 10:39:40]   -> ✅ SVM Accuracy: 85.00%
+[2026-06-16 10:39:40] Registered model svm_model.pkl in training_registry.json
+[2026-06-16 10:39:40]   -> Training Quantum Model: Simulated VQC (Seed)...
+[2026-06-16 10:39:40]   -> ✅ Simulated VQC Seed Accuracy: 75.00%
+[2026-06-16 10:39:40] Registered model vqc_seed_model.pkl in training_registry.json
+[2026-06-16 10:39:40] 
+--- META MODEL INTEGRATION ---
+[2026-06-16 10:39:40] 🚀 Meta-Model trained successfully with 95.00% validation accuracy.
+[2026-06-16 10:39:40] Registered model meta_model.pkl in training_registry.json
+[2026-06-16 10:39:40] Pipeline execution finished gracefully.
+
+[2026-06-30 12:26:08] ==================================================
+[2026-06-30 12:26:08] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-06-30 12:26:08] ==================================================
+[2026-06-30 12:26:08] Scanning datasets...
+[2026-06-30 12:26:08] Generating realistic correlated mock datasets to allow pipeline run...
+[2026-06-30 12:26:08] Generated realistic mock datasets in data/ folder successfully.
+[2026-06-30 12:26:08] Detected Crop dataset: data\Crop_recommendation.csv
+[2026-06-30 12:26:08] Detected Yield dataset: data\crop_production_karnataka.csv
+[2026-06-30 12:26:08] Detected Seed dataset: data\seed_viability_data.csv
+[2026-06-30 12:26:11] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-06-30 12:26:11] 
+--- DATASET 1: Crop Data ---
+[2026-06-30 12:26:11]   -> Total Records: 2200
+[2026-06-30 12:26:11]   -> Features Count: 7
+[2026-06-30 12:31:11] ==================================================
+[2026-06-30 12:31:11] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-06-30 12:31:11] ==================================================
+[2026-06-30 12:31:11] Scanning datasets...
+[2026-06-30 12:31:11] Generating realistic correlated mock datasets to allow pipeline run...
+[2026-06-30 12:31:11] Generated realistic mock datasets in data/ folder successfully.
+[2026-06-30 12:31:11] Detected Crop dataset: data\Crop_recommendation.csv
+[2026-06-30 12:31:11] Detected Yield dataset: data\crop_production_karnataka.csv
+[2026-06-30 12:31:11] Detected Seed dataset: data\seed_viability_data.csv
+[2026-06-30 12:31:13] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-06-30 12:31:13] 
+--- DATASET 1: Crop Data ---
+[2026-06-30 12:31:13]   -> Total Records: 2200
+[2026-06-30 12:31:13]   -> Features Count: 7
+[2026-06-30 12:31:13]   -> Classes Count: 22
+[2026-06-30 12:31:13]   -> Training Classical Model: Random Forest...
+[2026-06-30 12:31:14]   -> ✅ RF Accuracy: 99.32%
+[2026-06-30 12:31:14] Registered model rf_model.pkl in training_registry.json
+[2026-06-30 12:31:14]   -> Training Quantum Model: Simulated VQC (Crop)...
+[2026-06-30 12:31:15]   -> ✅ Simulated VQC Accuracy: 38.41%
+[2026-06-30 12:31:15] Registered model vqc_crop_model.pkl in training_registry.json
+[2026-06-30 12:31:15] 
+--- DATASET 2: Yield Data ---
+[2026-06-30 12:31:15]   -> Total Records: 100
+[2026-06-30 12:31:15]   -> Features Count: 3
+[2026-06-30 12:31:15]   -> Training Classical Model: XGBoost...
+[2026-06-30 12:31:15]   -> ✅ XGBoost R2 Score: 0.94
+[2026-06-30 12:31:15] Registered model xgb_model.pkl in training_registry.json
+[2026-06-30 12:31:15]   -> Training Quantum Model: Simulated VQR (Yield)...
+[2026-06-30 12:31:15]   -> ✅ Simulated VQR R2 Score: -0.56
+[2026-06-30 12:31:15] Registered model vqc_yield_model.pkl in training_registry.json
+[2026-06-30 12:31:15] 
+--- DATASET 3: Seed Data ---
+[2026-06-30 12:31:15]   -> Total Records: 100
+[2026-06-30 12:31:15]   -> Features Count: 2
+[2026-06-30 12:31:15]   -> Training Classical Model: SVM...
+[2026-06-30 12:31:15]   -> ✅ SVM Accuracy: 85.00%
+[2026-06-30 12:31:15] Registered model svm_model.pkl in training_registry.json
+[2026-06-30 12:31:15]   -> Training Quantum Model: Simulated VQC (Seed)...
+[2026-06-30 12:31:15]   -> ✅ Simulated VQC Seed Accuracy: 60.00%
+[2026-06-30 12:31:15] Registered model vqc_seed_model.pkl in training_registry.json
+[2026-06-30 12:31:15] 
+--- META MODEL INTEGRATION ---
+[2026-06-30 12:31:15] 🚀 Meta-Model trained successfully with 95.00% validation accuracy.
+[2026-06-30 12:31:15] Registered model meta_model.pkl in training_registry.json
+[2026-06-30 12:31:15] Pipeline execution finished gracefully.
+
+[2026-06-30 13:10:23] ==================================================
+[2026-06-30 13:10:23] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-06-30 13:10:23] ==================================================
+[2026-06-30 13:10:23] Scanning datasets...
+[2026-06-30 13:10:23] Generating realistic correlated mock datasets to allow pipeline run...
+[2026-06-30 13:10:23] Generated realistic mock datasets in data/ folder successfully.
+[2026-06-30 13:10:24] Detected Crop dataset: data\Crop_recommendation.csv
+[2026-06-30 13:10:24] Detected Yield dataset: data\crop_production_karnataka.csv
+[2026-06-30 13:10:24] Detected Seed dataset: data\seed_viability_data.csv
+[2026-06-30 13:10:28] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-06-30 13:10:28] 
+--- DATASET 1: Crop Data ---
+[2026-06-30 13:10:28]   -> Total Records: 2200
+[2026-06-30 13:10:28]   -> Features Count: 7
+[2026-06-30 13:10:28]   -> Classes Count: 22
+[2026-06-30 13:10:28]   -> Training Classical Model: Random Forest...
+[2026-06-30 13:10:28]   -> ✅ RF Accuracy: 99.32%
+[2026-06-30 13:10:28] Registered model rf_model.pkl in training_registry.json
+[2026-06-30 13:10:28]   -> Training Quantum Model: Simulated VQC (Crop)...
+[2026-06-30 13:10:30]   -> ✅ Simulated VQC Accuracy: 38.41%
+[2026-06-30 13:10:30] Registered model vqc_crop_model.pkl in training_registry.json
+[2026-06-30 13:10:30] 
+--- DATASET 2: Yield Data ---
+[2026-06-30 13:10:30]   -> Total Records: 100
+[2026-06-30 13:10:30]   -> Features Count: 3
+[2026-06-30 13:10:30]   -> Training Classical Model: XGBoost...
+[2026-06-30 13:10:30]   -> ✅ XGBoost R2 Score: 0.94
+[2026-06-30 13:10:30] Registered model xgb_model.pkl in training_registry.json
+[2026-06-30 13:10:30]   -> Training Quantum Model: Simulated VQR (Yield)...
+[2026-06-30 13:10:30]   -> ✅ Simulated VQR R2 Score: -0.56
+[2026-06-30 13:10:30] Registered model vqc_yield_model.pkl in training_registry.json
+[2026-06-30 13:10:30] 
+--- DATASET 3: Seed Data ---
+[2026-06-30 13:10:30]   -> Total Records: 100
+[2026-06-30 13:10:30]   -> Features Count: 2
+[2026-06-30 13:10:30]   -> Training Classical Model: SVM...
+[2026-06-30 13:10:30]   -> ✅ SVM Accuracy: 85.00%
+[2026-06-30 13:10:30] Registered model svm_model.pkl in training_registry.json
+[2026-06-30 13:10:30]   -> Training Quantum Model: Simulated VQC (Seed)...
+[2026-06-30 13:10:30]   -> ✅ Simulated VQC Seed Accuracy: 60.00%
+[2026-06-30 13:10:30] Registered model vqc_seed_model.pkl in training_registry.json
+[2026-06-30 13:10:30] 
+--- META MODEL INTEGRATION ---
+[2026-06-30 13:10:30] 🚀 Meta-Model trained successfully with 95.00% validation accuracy.
+[2026-06-30 13:10:30] Registered model meta_model.pkl in training_registry.json
+[2026-06-30 13:10:31] Pipeline execution finished gracefully.
+
+[2026-06-30 14:36:23] ==================================================
+[2026-06-30 14:36:23] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-06-30 14:36:23] ==================================================
+[2026-06-30 14:36:23] Scanning datasets...
+[2026-06-30 14:36:23] Generating realistic correlated mock datasets to allow pipeline run...
+[2026-06-30 14:36:23] Generated realistic mock datasets in data/ folder successfully.
+[2026-06-30 14:36:24] Detected Crop dataset: data\Crop_recommendation.csv
+[2026-06-30 14:36:24] Detected Yield dataset: data\crop_production_karnataka.csv
+[2026-06-30 14:36:24] Detected Seed dataset: data\seed_viability_data.csv
+[2026-06-30 14:36:27] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-06-30 14:36:27] 
+--- DATASET 1: Crop Data ---
+[2026-06-30 14:36:27]   -> Total Records: 2200
+[2026-06-30 14:36:27]   -> Features Count: 7
+[2026-06-30 14:36:27]   -> Classes Count: 22
+[2026-06-30 14:36:27]   -> Training Classical Model: Random Forest...
+[2026-06-30 14:36:28]   -> ✅ RF Accuracy: 99.32%
+[2026-06-30 14:36:28] Registered model rf_model.pkl in training_registry.json
+[2026-06-30 14:36:28]   -> Training Quantum Model: Simulated VQC (Crop)...
+[2026-06-30 14:36:29]   -> ✅ Simulated VQC Accuracy: 38.41%
+[2026-06-30 14:36:29] Registered model vqc_crop_model.pkl in training_registry.json
+[2026-06-30 14:36:29] 
+--- DATASET 2: Yield Data ---
+[2026-06-30 14:36:30]   -> Total Records: 100
+[2026-06-30 14:36:30]   -> Features Count: 3
+[2026-06-30 14:36:30]   -> Training Classical Model: XGBoost...
+[2026-06-30 14:36:30]   -> ✅ XGBoost R2 Score: 0.94
+[2026-06-30 14:36:30] Registered model xgb_model.pkl in training_registry.json
+[2026-06-30 14:36:30]   -> Training Quantum Model: Simulated VQR (Yield)...
+[2026-06-30 14:36:30]   -> ✅ Simulated VQR R2 Score: -0.56
+[2026-06-30 14:36:30] Registered model vqc_yield_model.pkl in training_registry.json
+[2026-06-30 14:36:30] 
+--- DATASET 3: Seed Data ---
+[2026-06-30 14:36:30]   -> Total Records: 100
+[2026-06-30 14:36:30]   -> Features Count: 2
+[2026-06-30 14:36:30]   -> Training Classical Model: SVM...
+[2026-06-30 14:36:30]   -> ✅ SVM Accuracy: 85.00%
+[2026-06-30 14:36:30] Registered model svm_model.pkl in training_registry.json
+[2026-06-30 14:36:30]   -> Training Quantum Model: Simulated VQC (Seed)...
+[2026-06-30 14:36:30]   -> ✅ Simulated VQC Seed Accuracy: 60.00%
+[2026-06-30 14:36:30] Registered model vqc_seed_model.pkl in training_registry.json
+[2026-06-30 14:36:30] 
+--- META MODEL INTEGRATION ---
+[2026-06-30 14:36:30] 🚀 Meta-Model trained successfully with 95.00% validation accuracy.
+[2026-06-30 14:36:30] Registered model meta_model.pkl in training_registry.json
+[2026-06-30 14:36:30] Pipeline execution finished gracefully.
+
+[2026-06-30 14:51:53] ==================================================
+[2026-06-30 14:51:53] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-06-30 14:51:53] ==================================================
+[2026-06-30 14:51:53] Scanning datasets...
+[2026-06-30 14:51:53] Generating realistic correlated mock datasets to allow pipeline run...
+[2026-06-30 14:51:53] Generated realistic mock datasets in data/ folder successfully.
+[2026-06-30 14:51:53] Detected Crop dataset: data\Crop_recommendation.csv
+[2026-06-30 14:51:53] Detected Yield dataset: data\crop_production_karnataka.csv
+[2026-06-30 14:51:53] Detected Seed dataset: data\seed_viability_data.csv
+[2026-06-30 14:51:56] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-06-30 14:51:56] 
+--- DATASET 1: Crop Data ---
+[2026-06-30 14:51:56]   -> Total Records: 2200
+[2026-06-30 14:51:56]   -> Features Count: 7
+[2026-06-30 14:51:56]   -> Classes Count: 22
+[2026-06-30 14:51:56]   -> Training Classical Model: Random Forest...
+[2026-06-30 14:51:56]   -> ✅ RF Accuracy: 99.32%
+[2026-06-30 14:51:56] Registered model rf_model.pkl in training_registry.json
+[2026-06-30 14:51:56]   -> Training Quantum Model: Simulated VQC (Crop)...
+[2026-06-30 14:51:58]   -> ✅ Simulated VQC Accuracy: 38.41%
+[2026-06-30 14:51:58] Registered model vqc_crop_model.pkl in training_registry.json
+[2026-06-30 14:51:58] 
+--- DATASET 2: Yield Data ---
+[2026-06-30 14:51:58]   -> Total Records: 100
+[2026-06-30 14:51:58]   -> Features Count: 3
+[2026-06-30 14:51:58]   -> Training Classical Model: XGBoost...
+[2026-06-30 14:51:58]   -> ✅ XGBoost R2 Score: 0.94
+[2026-06-30 14:51:58] Registered model xgb_model.pkl in training_registry.json
+[2026-06-30 14:51:58]   -> Training Quantum Model: Simulated VQR (Yield)...
+[2026-06-30 14:51:58]   -> ✅ Simulated VQR R2 Score: -0.56
+[2026-06-30 14:51:58] Registered model vqc_yield_model.pkl in training_registry.json
+[2026-06-30 14:51:58] 
+--- DATASET 3: Seed Data ---
+[2026-06-30 14:51:58]   -> Total Records: 100
+[2026-06-30 14:51:58]   -> Features Count: 2
+[2026-06-30 14:51:58]   -> Training Classical Model: SVM...
+[2026-06-30 14:51:58]   -> ✅ SVM Accuracy: 85.00%
+[2026-06-30 14:51:58] Registered model svm_model.pkl in training_registry.json
+[2026-06-30 14:51:58]   -> Training Quantum Model: Simulated VQC (Seed)...
+[2026-06-30 14:51:58]   -> ✅ Simulated VQC Seed Accuracy: 60.00%
+[2026-06-30 14:51:58] Registered model vqc_seed_model.pkl in training_registry.json
+[2026-06-30 14:51:58] 
+--- META MODEL INTEGRATION ---
+[2026-06-30 14:51:58] 🚀 Meta-Model trained successfully with 95.00% validation accuracy.
+[2026-06-30 14:51:59] Registered model meta_model.pkl in training_registry.json
+[2026-06-30 14:51:59] Pipeline execution finished gracefully.
+
+[2026-07-16 00:12:18] ==================================================
+[2026-07-16 00:12:18] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-07-16 00:12:18] ==================================================
+[2026-07-16 00:12:18] Scanning datasets...
+[2026-07-16 00:12:18] Generating realistic correlated mock datasets to allow pipeline run...
+[2026-07-16 00:12:18] Generated realistic mock datasets in data/ folder successfully.
+[2026-07-16 00:12:18] Detected Crop dataset: data\Crop_recommendation.csv
+[2026-07-16 00:12:18] Detected Yield dataset: data\crop_production_karnataka.csv
+[2026-07-16 00:12:18] Detected Seed dataset: data\seed_viability_data.csv
+[2026-07-16 00:12:22] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-07-16 00:12:22] 
+--- DATASET 1: Crop Data ---
+[2026-07-16 00:12:22]   -> Total Records: 2200
+[2026-07-16 00:12:22]   -> Features Count: 7
+[2026-07-16 00:12:22]   -> Classes Count: 22
+[2026-07-16 00:12:22]   -> Training Classical Model: Random Forest...
+[2026-07-16 00:12:23]   -> ✅ RF Accuracy: 99.32%
+[2026-07-16 00:12:23] Registered model rf_model.pkl in training_registry.json
+[2026-07-16 00:12:23]   -> Training Quantum Model: Simulated VQC (Crop)...
+[2026-07-16 00:16:35] ==================================================
+[2026-07-16 00:16:35] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-07-16 00:16:35] ==================================================
+[2026-07-16 00:16:35] Scanning datasets...
+[2026-07-16 00:16:35] Generating realistic correlated mock datasets to allow pipeline run...
+[2026-07-16 00:16:35] Generated realistic mock datasets in data/ folder successfully.
+[2026-07-16 00:16:35] Detected Crop dataset: data\Crop_recommendation.csv
+[2026-07-16 00:16:35] Detected Yield dataset: data\crop_production_karnataka.csv
+[2026-07-16 00:16:35] Detected Seed dataset: data\seed_viability_data.csv
+[2026-07-16 00:16:37] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-07-16 00:16:37] 
+--- DATASET 1: Crop Data ---
+[2026-07-16 00:16:37]   -> Total Records: 2200
+[2026-07-16 00:16:37]   -> Features Count: 7
+[2026-07-16 00:16:37]   -> Classes Count: 22
+[2026-07-16 00:16:37]   -> Training Classical Model: Random Forest...
+[2026-07-16 00:16:38]   -> ✅ RF Accuracy: 99.32%
+[2026-07-16 00:16:38] Registered model rf_model.pkl in training_registry.json
+[2026-07-16 00:16:38]   -> Training Quantum Model: Simulated VQC (Crop)...
+[2026-07-16 00:16:39]   -> ✅ Simulated VQC Accuracy: 85.68%
+[2026-07-16 00:16:39] Registered model vqc_crop_model.pkl in training_registry.json
+[2026-07-16 00:16:39] 
+--- DATASET 2: Yield Data ---
+[2026-07-16 00:16:39]   -> Total Records: 100
+[2026-07-16 00:16:39]   -> Features Count: 5
+[2026-07-16 00:16:39]   -> Training Classical Model: XGBoost...
+[2026-07-16 00:16:39]   -> ✅ XGBoost R2 Score: 0.93
+[2026-07-16 00:16:39] Registered model xgb_model.pkl in training_registry.json
+[2026-07-16 00:16:39]   -> Training Quantum Model: Simulated VQR (Yield)...
+[2026-07-16 00:16:40]   -> ✅ Simulated VQR R2 Score: -3.35
+[2026-07-16 00:16:40] Registered model vqc_yield_model.pkl in training_registry.json
+[2026-07-16 00:16:40] 
+--- DATASET 3: Seed Data ---
+[2026-07-16 00:16:40]   -> Total Records: 100
+[2026-07-16 00:16:40]   -> Features Count: 2
+[2026-07-16 00:16:40]   -> Training Classical Model: SVM...
+[2026-07-16 00:16:57] -> Best SVM params: {'C': 10, 'gamma': 'scale', 'kernel': 'rbf'}
+[2026-07-16 00:16:57] -> Best CV accuracy: 81.25%
+[2026-07-16 00:16:57]   -> ✅ SVM Accuracy: 90.00%
+[2026-07-16 00:16:57] Registered model svm_model.pkl in training_registry.json
+[2026-07-16 00:16:57]   -> Training Quantum Model: Simulated VQC (Seed)...
+[2026-07-16 00:16:57]   -> ✅ Simulated VQC Seed Accuracy: 90.00%
+[2026-07-16 00:16:57] Registered model vqc_seed_model.pkl in training_registry.json
+[2026-07-16 00:16:57] 
+--- META MODEL INTEGRATION ---
+[2026-07-16 00:21:34] ==================================================
+[2026-07-16 00:21:34] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-07-16 00:21:34] ==================================================
+[2026-07-16 00:21:34] Scanning datasets...
+[2026-07-16 00:21:34] Generating realistic correlated mock datasets to allow pipeline run...
+[2026-07-16 00:21:34] Generated realistic mock datasets in data/ folder successfully.
+[2026-07-16 00:21:35] Detected Crop dataset: data\Crop_recommendation.csv
+[2026-07-16 00:21:35] Detected Yield dataset: data\crop_production_karnataka.csv
+[2026-07-16 00:21:35] Detected Seed dataset: data\seed_viability_data.csv
+[2026-07-16 00:21:37] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-07-16 00:21:37] 
+--- DATASET 1: Crop Data ---
+[2026-07-16 00:21:37]   -> Total Records: 2200
+[2026-07-16 00:21:37]   -> Features Count: 7
+[2026-07-16 00:21:37]   -> Classes Count: 22
+[2026-07-16 00:21:37]   -> Training Classical Model: Random Forest...
+[2026-07-16 00:21:38]   -> ✅ RF Accuracy: 99.32%
+[2026-07-16 00:21:38] Registered model rf_model.pkl in training_registry.json
+[2026-07-16 00:21:38]   -> Training Quantum Model: Simulated VQC (Crop)...
+[2026-07-16 00:21:38]   -> ✅ Simulated VQC Accuracy: 85.68%
+[2026-07-16 00:21:38] Registered model vqc_crop_model.pkl in training_registry.json
+[2026-07-16 00:21:38] 
+--- DATASET 2: Yield Data ---
+[2026-07-16 00:21:38]   -> Total Records: 100
+[2026-07-16 00:21:38]   -> Features Count: 5
+[2026-07-16 00:21:38]   -> Training Classical Model: XGBoost...
+[2026-07-16 00:21:38]   -> ✅ XGBoost R2 Score: 0.93
+[2026-07-16 00:21:38] Registered model xgb_model.pkl in training_registry.json
+[2026-07-16 00:21:38]   -> Training Quantum Model: Simulated VQR (Yield)...
+[2026-07-16 00:21:39]   -> ✅ Simulated VQR R2 Score: -3.35
+[2026-07-16 00:21:39] Registered model vqc_yield_model.pkl in training_registry.json
+[2026-07-16 00:21:39] 
+--- DATASET 3: Seed Data ---
+[2026-07-16 00:21:39]   -> Total Records: 100
+[2026-07-16 00:21:39]   -> Features Count: 2
+[2026-07-16 00:21:39]   -> Training Classical Model: SVM...
+[2026-07-16 00:21:49] -> Best SVM params: {'C': 10, 'gamma': 'scale', 'kernel': 'rbf'}
+[2026-07-16 00:21:49] -> Best CV accuracy: 81.25%
+[2026-07-16 00:21:49]   -> ✅ SVM Accuracy: 90.00%
+[2026-07-16 00:21:49] Registered model svm_model.pkl in training_registry.json
+[2026-07-16 00:21:49]   -> Training Quantum Model: Simulated VQC (Seed)...
+[2026-07-16 00:21:49]   -> ✅ Simulated VQC Seed Accuracy: 90.00%
+[2026-07-16 00:21:49] Registered model vqc_seed_model.pkl in training_registry.json
+[2026-07-16 00:21:49] 
+--- META MODEL INTEGRATION ---
+[2026-07-16 00:26:00] ==================================================
+[2026-07-16 00:26:00] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-07-16 00:26:00] ==================================================
+[2026-07-16 00:26:00] Scanning datasets...
+[2026-07-16 00:26:00] Generating realistic correlated mock datasets to allow pipeline run...
+[2026-07-16 00:26:00] Generated realistic mock datasets in data/ folder successfully.
+[2026-07-16 00:26:00] Detected Crop dataset: data\Crop_recommendation.csv
+[2026-07-16 00:26:00] Detected Yield dataset: data\crop_production_karnataka.csv
+[2026-07-16 00:26:00] Detected Seed dataset: data\seed_viability_data.csv
+[2026-07-16 00:26:02] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-07-16 00:26:02] 
+--- DATASET 1: Crop Data ---
+[2026-07-16 00:26:02]   -> Total Records: 2200
+[2026-07-16 00:26:02]   -> Features Count: 7
+[2026-07-16 00:26:02]   -> Classes Count: 22
+[2026-07-16 00:26:02]   -> Training Classical Model: Random Forest...
+[2026-07-16 00:26:03]   -> ✅ RF Accuracy: 99.32%
+[2026-07-16 00:26:03] Registered model rf_model.pkl in training_registry.json
+[2026-07-16 00:26:03]   -> Training Quantum Model: Simulated VQC (Crop)...
+[2026-07-16 00:26:03]   -> ✅ Simulated VQC Accuracy: 85.68%
+[2026-07-16 00:26:03] Registered model vqc_crop_model.pkl in training_registry.json
+[2026-07-16 00:26:03] 
+--- DATASET 2: Yield Data ---
+[2026-07-16 00:26:03]   -> Total Records: 100
+[2026-07-16 00:26:03]   -> Features Count: 5
+[2026-07-16 00:26:03]   -> Training Classical Model: XGBoost...
+[2026-07-16 00:26:03]   -> ✅ XGBoost R2 Score: 0.93
+[2026-07-16 00:26:03] Registered model xgb_model.pkl in training_registry.json
+[2026-07-16 00:26:03]   -> Training Quantum Model: Simulated VQR (Yield)...
+[2026-07-16 00:26:04]   -> ✅ Simulated VQR R2 Score: -3.35
+[2026-07-16 00:26:04] Registered model vqc_yield_model.pkl in training_registry.json
+[2026-07-16 00:26:04] 
+--- DATASET 3: Seed Data ---
+[2026-07-16 00:26:04]   -> Total Records: 100
+[2026-07-16 00:26:04]   -> Features Count: 2
+[2026-07-16 00:26:04]   -> Training Classical Model: SVM...
+[2026-07-16 00:26:13] -> Best SVM params: {'C': 10, 'gamma': 'scale', 'kernel': 'rbf'}
+[2026-07-16 00:26:13] -> Best CV accuracy: 81.25%
+[2026-07-16 00:26:13]   -> ✅ SVM Accuracy: 90.00%
+[2026-07-16 00:26:13] Registered model svm_model.pkl in training_registry.json
+[2026-07-16 00:26:13]   -> Training Quantum Model: Simulated VQC (Seed)...
+[2026-07-16 00:26:13]   -> ✅ Simulated VQC Seed Accuracy: 90.00%
+[2026-07-16 00:26:13] Registered model vqc_seed_model.pkl in training_registry.json
+[2026-07-16 00:26:13] 
+--- META MODEL INTEGRATION ---
+[2026-07-16 00:26:14] Meta-Model Train Accuracy: 100.00%
+[2026-07-16 00:26:14] Meta-Model Test Accuracy: 66.67%
+[2026-07-16 00:26:14] Meta-Model CV Mean: 75.00% +/- 15.81%
+[2026-07-16 00:26:14] Registered model meta_model.pkl in training_registry.json
+[2026-07-16 00:26:14] Pipeline execution finished gracefully.
+
+[2026-07-17 11:20:04] ==================================================
+[2026-07-17 11:20:04] 🌱 SeedIQ - Detailed Model Training Pipeline
+[2026-07-17 11:20:04] ==================================================
+[2026-07-17 11:20:04] Scanning datasets...
+[2026-07-17 11:20:04] Generating realistic correlated mock datasets to allow pipeline run...
+[2026-07-17 11:20:04] Generated realistic mock datasets in data/ folder successfully.
+[2026-07-17 11:20:04] Detected Crop dataset: data\Crop_recommendation.csv
+[2026-07-17 11:20:04] Detected Yield dataset: data\crop_production_karnataka.csv
+[2026-07-17 11:20:04] Detected Seed dataset: data\seed_viability_data.csv
+[2026-07-17 11:20:09] ⚠️ Qiskit not installed. Using simulated quantum outputs.
+[2026-07-17 11:20:09] 
+--- DATASET 1: Crop Data ---
+[2026-07-17 11:20:09]   -> Total Records: 2200
+[2026-07-17 11:20:09]   -> Features Count: 7
+[2026-07-17 11:20:09]   -> Classes Count: 22
+[2026-07-17 11:20:09]   -> Training Classical Model: Random Forest...
+[2026-07-17 11:20:10]   -> ✅ RF Accuracy: 99.32%
+[2026-07-17 11:20:10] Registered model rf_model.pkl in training_registry.json
+[2026-07-17 11:20:10]   -> Training Quantum Model: Simulated VQC (Crop)...
+[2026-07-17 11:20:11]   -> ✅ Simulated VQC Accuracy: 85.68%
+[2026-07-17 11:20:11] Registered model vqc_crop_model.pkl in training_registry.json
+[2026-07-17 11:20:11] 
+--- DATASET 2: Yield Data ---
+[2026-07-17 11:20:11]   -> Total Records: 100
+[2026-07-17 11:20:11]   -> Features Count: 5
+[2026-07-17 11:20:11]   -> Training Classical Model: XGBoost...
+[2026-07-17 11:20:12]   -> ✅ XGBoost R2 Score: 0.96
+[2026-07-17 11:20:12] Registered model xgb_model.pkl in training_registry.json
+[2026-07-17 11:20:12]   -> Training Quantum Model: Simulated VQR (Yield)...
+[2026-07-17 11:20:12]   -> ✅ Simulated VQR R2 Score: -2.19
+[2026-07-17 11:20:12] Registered model vqc_yield_model.pkl in training_registry.json
+[2026-07-17 11:20:12] 
+--- DATASET 3: Seed Data ---
+[2026-07-17 11:20:12]   -> Total Records: 100
+[2026-07-17 11:20:12]   -> Features Count: 2
+[2026-07-17 11:20:12]   -> Training Classical Model: SVM...
+[2026-07-17 11:20:35] -> Best SVM params: {'C': 10, 'gamma': 'scale', 'kernel': 'rbf'}
+[2026-07-17 11:20:35] -> Best CV accuracy: 93.75%
+[2026-07-17 11:20:35]   -> ✅ SVM Accuracy: 90.00%
+[2026-07-17 11:20:35] Registered model svm_model.pkl in training_registry.json
+[2026-07-17 11:20:35]   -> Training Quantum Model: Simulated VQC (Seed)...
+[2026-07-17 11:20:35]   -> ✅ Simulated VQC Seed Accuracy: 85.00%
+[2026-07-17 11:20:35] Registered model vqc_seed_model.pkl in training_registry.json
+[2026-07-17 11:20:35] 
+--- META MODEL INTEGRATION ---
+[2026-07-17 11:20:37] Meta-Model Train Accuracy: 100.00%
+[2026-07-17 11:20:37] Meta-Model Test Accuracy: 33.33%
+[2026-07-17 11:20:37] Meta-Model CV Mean: 35.00% +/- 12.25%
+[2026-07-17 11:20:37] Registered model meta_model.pkl in training_registry.json
+[2026-07-17 11:20:38] Pipeline execution finished gracefully.
+

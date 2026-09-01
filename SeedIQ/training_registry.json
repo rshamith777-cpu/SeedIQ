@@ -1,0 +1,1548 @@
+[
+    {
+        "timestamp": "2026-05-13 21:56:56",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data/merged_ml_dataset.csv",
+        "algorithm": "Random Forest Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "random_state": 42
+        },
+        "metrics": {
+            "Accuracy": "25.00%"
+        },
+        "output_path": "models/rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-05-13 21:56:57",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "data/crop_production_karnataka.csv",
+        "algorithm": "XGBoost Regressor",
+        "features": [
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "learning_rate": 0.1
+        },
+        "metrics": {
+            "R2_Score": "-1.08"
+        },
+        "output_path": "models/xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-05-13 21:56:57",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "data/seed_viability_data.csv",
+        "algorithm": "Support Vector Classifier (SVC)",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "kernel": "rbf",
+            "probability": true
+        },
+        "metrics": {
+            "Accuracy": "33.33%"
+        },
+        "output_path": "models/svm_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-05-13 21:56:57",
+        "model_name": "meta_model.pkl",
+        "dataset_path": "Stacking (RF + XGB + SVM + VQC prediction vectors)",
+        "algorithm": "Logistic Regression (Ensemble Meta Model)",
+        "features": [
+            "rf_crop_pred",
+            "qml_crop_pred",
+            "xgb_yield_pred",
+            "qml_yield_pred",
+            "svm_seed_pred",
+            "qml_seed_pred"
+        ],
+        "target": "High Success Metametric",
+        "hyperparameters": {
+            "max_iter": 1000
+        },
+        "metrics": {
+            "Accuracy": "100.00%"
+        },
+        "output_path": "models/meta_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-15 00:30:15",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data\\merged_ml_dataset.csv",
+        "algorithm": "Random Forest Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "random_state": 42
+        },
+        "metrics": {
+            "Accuracy": "20.00%"
+        },
+        "output_path": "models/rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-15 00:30:15",
+        "model_name": "vqc_crop_model.pkl",
+        "dataset_path": "data\\merged_ml_dataset.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "30.00%"
+        },
+        "output_path": "models/vqc_crop_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-15 00:30:19",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "XGBoost Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "learning_rate": 0.1
+        },
+        "metrics": {
+            "R2_Score": "-1.46"
+        },
+        "output_path": "models/xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-15 00:30:19",
+        "model_name": "vqc_yield_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "Simulated Quantum Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {},
+        "metrics": {
+            "R2_Score": "-0.61"
+        },
+        "output_path": "models/vqc_yield_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-15 00:30:19",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Support Vector Classifier (SVC)",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "kernel": "rbf",
+            "probability": true
+        },
+        "metrics": {
+            "Accuracy": "55.00%"
+        },
+        "output_path": "models/svm_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-15 00:30:19",
+        "model_name": "vqc_seed_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "65.00%"
+        },
+        "output_path": "models/vqc_seed_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-15 00:30:20",
+        "model_name": "meta_model.pkl",
+        "dataset_path": "Stacking (RF + XGB + SVM + VQC prediction vectors)",
+        "algorithm": "Logistic Regression (Ensemble Meta Model)",
+        "features": [
+            "rf_crop_pred",
+            "qml_crop_pred",
+            "xgb_yield_pred",
+            "qml_yield_pred",
+            "svm_seed_pred",
+            "qml_seed_pred"
+        ],
+        "target": "High Success Metametric",
+        "hyperparameters": {
+            "max_iter": 1000
+        },
+        "metrics": {
+            "Accuracy": "75.00%"
+        },
+        "output_path": "models/meta_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-16 10:39:39",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data\\merged_ml_dataset.csv",
+        "algorithm": "Random Forest Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "random_state": 42
+        },
+        "metrics": {
+            "Accuracy": "100.00%"
+        },
+        "output_path": "models/rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-16 10:39:39",
+        "model_name": "vqc_crop_model.pkl",
+        "dataset_path": "data\\merged_ml_dataset.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "60.00%"
+        },
+        "output_path": "models/vqc_crop_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-16 10:39:40",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "XGBoost Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "learning_rate": 0.1
+        },
+        "metrics": {
+            "R2_Score": "0.94"
+        },
+        "output_path": "models/xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-16 10:39:40",
+        "model_name": "vqc_yield_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "Simulated Quantum Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {},
+        "metrics": {
+            "R2_Score": "-1.22"
+        },
+        "output_path": "models/vqc_yield_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-16 10:39:40",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Support Vector Classifier (SVC)",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "kernel": "rbf",
+            "probability": true
+        },
+        "metrics": {
+            "Accuracy": "85.00%"
+        },
+        "output_path": "models/svm_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-16 10:39:40",
+        "model_name": "vqc_seed_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "75.00%"
+        },
+        "output_path": "models/vqc_seed_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-16 10:39:40",
+        "model_name": "meta_model.pkl",
+        "dataset_path": "Stacking (RF + XGB + SVM + VQC prediction vectors)",
+        "algorithm": "Logistic Regression (Ensemble Meta Model)",
+        "features": [
+            "rf_crop_pred",
+            "qml_crop_pred",
+            "xgb_yield_pred",
+            "qml_yield_pred",
+            "svm_seed_pred",
+            "qml_seed_pred"
+        ],
+        "target": "High Success Metametric",
+        "hyperparameters": {
+            "max_iter": 1000
+        },
+        "metrics": {
+            "Accuracy": "95.00%"
+        },
+        "output_path": "models/meta_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 12:31:14",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Random Forest Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "random_state": 42
+        },
+        "metrics": {
+            "Accuracy": "99.32%"
+        },
+        "output_path": "models/rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 12:31:15",
+        "model_name": "vqc_crop_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "38.41%"
+        },
+        "output_path": "models/vqc_crop_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 12:31:15",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "XGBoost Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "learning_rate": 0.1
+        },
+        "metrics": {
+            "R2_Score": "0.94"
+        },
+        "output_path": "models/xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 12:31:15",
+        "model_name": "vqc_yield_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "Simulated Quantum Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {},
+        "metrics": {
+            "R2_Score": "-0.56"
+        },
+        "output_path": "models/vqc_yield_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 12:31:15",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Support Vector Classifier (SVC)",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "kernel": "rbf",
+            "probability": true
+        },
+        "metrics": {
+            "Accuracy": "85.00%"
+        },
+        "output_path": "models/svm_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 12:31:15",
+        "model_name": "vqc_seed_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "60.00%"
+        },
+        "output_path": "models/vqc_seed_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 12:31:15",
+        "model_name": "meta_model.pkl",
+        "dataset_path": "Stacking (RF + XGB + SVM + VQC prediction vectors)",
+        "algorithm": "Logistic Regression (Ensemble Meta Model)",
+        "features": [
+            "rf_crop_pred",
+            "qml_crop_pred",
+            "xgb_yield_pred",
+            "qml_yield_pred",
+            "svm_seed_pred",
+            "qml_seed_pred"
+        ],
+        "target": "High Success Metametric",
+        "hyperparameters": {
+            "max_iter": 1000
+        },
+        "metrics": {
+            "Accuracy": "95.00%"
+        },
+        "output_path": "models/meta_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 13:10:28",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Random Forest Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "random_state": 42
+        },
+        "metrics": {
+            "Accuracy": "99.32%"
+        },
+        "output_path": "models/rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 13:10:30",
+        "model_name": "vqc_crop_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "38.41%"
+        },
+        "output_path": "models/vqc_crop_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 13:10:30",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "XGBoost Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "learning_rate": 0.1
+        },
+        "metrics": {
+            "R2_Score": "0.94"
+        },
+        "output_path": "models/xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 13:10:30",
+        "model_name": "vqc_yield_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "Simulated Quantum Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {},
+        "metrics": {
+            "R2_Score": "-0.56"
+        },
+        "output_path": "models/vqc_yield_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 13:10:30",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Support Vector Classifier (SVC)",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "kernel": "rbf",
+            "probability": true
+        },
+        "metrics": {
+            "Accuracy": "85.00%"
+        },
+        "output_path": "models/svm_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 13:10:30",
+        "model_name": "vqc_seed_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "60.00%"
+        },
+        "output_path": "models/vqc_seed_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 13:10:30",
+        "model_name": "meta_model.pkl",
+        "dataset_path": "Stacking (RF + XGB + SVM + VQC prediction vectors)",
+        "algorithm": "Logistic Regression (Ensemble Meta Model)",
+        "features": [
+            "rf_crop_pred",
+            "qml_crop_pred",
+            "xgb_yield_pred",
+            "qml_yield_pred",
+            "svm_seed_pred",
+            "qml_seed_pred"
+        ],
+        "target": "High Success Metametric",
+        "hyperparameters": {
+            "max_iter": 1000
+        },
+        "metrics": {
+            "Accuracy": "95.00%"
+        },
+        "output_path": "models/meta_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:36:28",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Random Forest Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "random_state": 42
+        },
+        "metrics": {
+            "Accuracy": "99.32%"
+        },
+        "output_path": "models/rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:36:29",
+        "model_name": "vqc_crop_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "38.41%"
+        },
+        "output_path": "models/vqc_crop_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:36:30",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "XGBoost Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "learning_rate": 0.1
+        },
+        "metrics": {
+            "R2_Score": "0.94"
+        },
+        "output_path": "models/xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:36:30",
+        "model_name": "vqc_yield_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "Simulated Quantum Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {},
+        "metrics": {
+            "R2_Score": "-0.56"
+        },
+        "output_path": "models/vqc_yield_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:36:30",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Support Vector Classifier (SVC)",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "kernel": "rbf",
+            "probability": true
+        },
+        "metrics": {
+            "Accuracy": "85.00%"
+        },
+        "output_path": "models/svm_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:36:30",
+        "model_name": "vqc_seed_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "60.00%"
+        },
+        "output_path": "models/vqc_seed_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:36:30",
+        "model_name": "meta_model.pkl",
+        "dataset_path": "Stacking (RF + XGB + SVM + VQC prediction vectors)",
+        "algorithm": "Logistic Regression (Ensemble Meta Model)",
+        "features": [
+            "rf_crop_pred",
+            "qml_crop_pred",
+            "xgb_yield_pred",
+            "qml_yield_pred",
+            "svm_seed_pred",
+            "qml_seed_pred"
+        ],
+        "target": "High Success Metametric",
+        "hyperparameters": {
+            "max_iter": 1000
+        },
+        "metrics": {
+            "Accuracy": "95.00%"
+        },
+        "output_path": "models/meta_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:51:56",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Random Forest Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "random_state": 42
+        },
+        "metrics": {
+            "Accuracy": "99.32%"
+        },
+        "output_path": "models/rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:51:58",
+        "model_name": "vqc_crop_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "38.41%"
+        },
+        "output_path": "models/vqc_crop_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:51:58",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "XGBoost Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "learning_rate": 0.1
+        },
+        "metrics": {
+            "R2_Score": "0.94"
+        },
+        "output_path": "models/xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:51:58",
+        "model_name": "vqc_yield_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "Simulated Quantum Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {},
+        "metrics": {
+            "R2_Score": "-0.56"
+        },
+        "output_path": "models/vqc_yield_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:51:58",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Support Vector Classifier (SVC)",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "kernel": "rbf",
+            "probability": true
+        },
+        "metrics": {
+            "Accuracy": "85.00%"
+        },
+        "output_path": "models/svm_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:51:58",
+        "model_name": "vqc_seed_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "60.00%"
+        },
+        "output_path": "models/vqc_seed_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-06-30 14:51:58",
+        "model_name": "meta_model.pkl",
+        "dataset_path": "Stacking (RF + XGB + SVM + VQC prediction vectors)",
+        "algorithm": "Logistic Regression (Ensemble Meta Model)",
+        "features": [
+            "rf_crop_pred",
+            "qml_crop_pred",
+            "xgb_yield_pred",
+            "qml_yield_pred",
+            "svm_seed_pred",
+            "qml_seed_pred"
+        ],
+        "target": "High Success Metametric",
+        "hyperparameters": {
+            "max_iter": 1000
+        },
+        "metrics": {
+            "Accuracy": "95.00%"
+        },
+        "output_path": "models/meta_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:12:23",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Random Forest Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "random_state": 42
+        },
+        "metrics": {
+            "Accuracy": "99.32%"
+        },
+        "output_path": "models/rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:16:38",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Random Forest Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "random_state": 42
+        },
+        "metrics": {
+            "Accuracy": "99.32%"
+        },
+        "output_path": "models/rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:16:39",
+        "model_name": "vqc_crop_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "85.68%"
+        },
+        "output_path": "models/vqc_crop_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:16:39",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "XGBoost Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares",
+            "Area_Sq",
+            "Crop_Season"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "learning_rate": 0.1
+        },
+        "metrics": {
+            "R2_Score": "0.93"
+        },
+        "output_path": "models/xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:16:40",
+        "model_name": "vqc_yield_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "Simulated Quantum Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares",
+            "Area_Sq",
+            "Crop_Season"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {},
+        "metrics": {
+            "R2_Score": "-3.35"
+        },
+        "output_path": "models/vqc_yield_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:16:57",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Support Vector Classifier (SVC)",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "kernel": "rbf",
+            "probability": true
+        },
+        "metrics": {
+            "Accuracy": "90.00%"
+        },
+        "output_path": "models/svm_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:16:57",
+        "model_name": "vqc_seed_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "90.00%"
+        },
+        "output_path": "models/vqc_seed_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:21:38",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Random Forest Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "random_state": 42
+        },
+        "metrics": {
+            "Accuracy": "99.32%"
+        },
+        "output_path": "models/rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:21:38",
+        "model_name": "vqc_crop_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "85.68%"
+        },
+        "output_path": "models/vqc_crop_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:21:38",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "XGBoost Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares",
+            "Area_Sq",
+            "Crop_Season"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "learning_rate": 0.1
+        },
+        "metrics": {
+            "R2_Score": "0.93"
+        },
+        "output_path": "models/xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:21:39",
+        "model_name": "vqc_yield_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "Simulated Quantum Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares",
+            "Area_Sq",
+            "Crop_Season"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {},
+        "metrics": {
+            "R2_Score": "-3.35"
+        },
+        "output_path": "models/vqc_yield_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:21:49",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Support Vector Classifier (SVC)",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "kernel": "rbf",
+            "probability": true
+        },
+        "metrics": {
+            "Accuracy": "90.00%"
+        },
+        "output_path": "models/svm_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:21:49",
+        "model_name": "vqc_seed_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "90.00%"
+        },
+        "output_path": "models/vqc_seed_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:26:03",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Random Forest Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "random_state": 42
+        },
+        "metrics": {
+            "Accuracy": "99.32%"
+        },
+        "output_path": "models/rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:26:03",
+        "model_name": "vqc_crop_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "85.68%"
+        },
+        "output_path": "models/vqc_crop_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:26:03",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "XGBoost Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares",
+            "Area_Sq",
+            "Crop_Season"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "learning_rate": 0.1
+        },
+        "metrics": {
+            "R2_Score": "0.93"
+        },
+        "output_path": "models/xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:26:04",
+        "model_name": "vqc_yield_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "Simulated Quantum Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares",
+            "Area_Sq",
+            "Crop_Season"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {},
+        "metrics": {
+            "R2_Score": "-3.35"
+        },
+        "output_path": "models/vqc_yield_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:26:13",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Support Vector Classifier (SVC)",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "kernel": "rbf",
+            "probability": true
+        },
+        "metrics": {
+            "Accuracy": "90.00%"
+        },
+        "output_path": "models/svm_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:26:13",
+        "model_name": "vqc_seed_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "90.00%"
+        },
+        "output_path": "models/vqc_seed_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-16 00:26:14",
+        "model_name": "meta_model.pkl",
+        "dataset_path": "Stacking (RF + XGB + SVM + VQC prediction vectors)",
+        "algorithm": "Gradient Boosting Classifier (Ensemble Meta Model)",
+        "features": [
+            "rf_crop_pred",
+            "qml_crop_pred",
+            "xgb_yield_pred",
+            "qml_yield_pred",
+            "svm_seed_pred",
+            "qml_seed_pred"
+        ],
+        "target": "High Success Metametric",
+        "hyperparameters": {
+            "n_estimators": 50,
+            "learning_rate": 0.1,
+            "max_depth": 3
+        },
+        "metrics": {
+            "Accuracy": "66.67%"
+        },
+        "output_path": "models/meta_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-17 11:20:10",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Random Forest Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "random_state": 42
+        },
+        "metrics": {
+            "Accuracy": "99.32%"
+        },
+        "output_path": "models/rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-17 11:20:11",
+        "model_name": "vqc_crop_model.pkl",
+        "dataset_path": "data\\Crop_recommendation.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "85.68%"
+        },
+        "output_path": "models/vqc_crop_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-17 11:20:12",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "XGBoost Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares",
+            "Area_Sq",
+            "Crop_Season"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "n_estimators": 100,
+            "learning_rate": 0.1
+        },
+        "metrics": {
+            "R2_Score": "0.96"
+        },
+        "output_path": "models/xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-17 11:20:12",
+        "model_name": "vqc_yield_model.pkl",
+        "dataset_path": "data\\crop_production_karnataka.csv",
+        "algorithm": "Simulated Quantum Regressor",
+        "features": [
+            "Crop",
+            "Season",
+            "Area_Hectares",
+            "Area_Sq",
+            "Crop_Season"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {},
+        "metrics": {
+            "R2_Score": "-2.19"
+        },
+        "output_path": "models/vqc_yield_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-17 11:20:35",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Support Vector Classifier (SVC)",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "kernel": "rbf",
+            "probability": true
+        },
+        "metrics": {
+            "Accuracy": "90.00%"
+        },
+        "output_path": "models/svm_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-17 11:20:35",
+        "model_name": "vqc_seed_model.pkl",
+        "dataset_path": "data\\seed_viability_data.csv",
+        "algorithm": "Simulated Quantum Classifier",
+        "features": [
+            "Moisture_Level",
+            "Weight_g"
+        ],
+        "target": "Viable",
+        "hyperparameters": {},
+        "metrics": {
+            "Accuracy": "85.00%"
+        },
+        "output_path": "models/vqc_seed_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-07-17 11:20:37",
+        "model_name": "meta_model.pkl",
+        "dataset_path": "Stacking (RF + XGB + SVM + VQC prediction vectors)",
+        "algorithm": "Gradient Boosting Classifier (Ensemble Meta Model)",
+        "features": [
+            "rf_crop_pred",
+            "qml_crop_pred",
+            "xgb_yield_pred",
+            "qml_yield_pred",
+            "svm_seed_pred",
+            "qml_seed_pred"
+        ],
+        "target": "High Success Metametric",
+        "hyperparameters": {
+            "n_estimators": 50,
+            "learning_rate": 0.1,
+            "max_depth": 3
+        },
+        "metrics": {
+            "Accuracy": "33.33%"
+        },
+        "output_path": "models/meta_model.pkl",
+        "status": "Trained & Saved"
+    }
+]

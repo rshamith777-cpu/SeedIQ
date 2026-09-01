@@ -1,0 +1,200 @@
+{
+  "Rice": {
+    "temp": "12-15°C",
+    "hum": "60-65%",
+    "pres": "Silo / hermetic bags. Fumigate against weevils.",
+    "shelf_life": "12-18 months",
+    "fungus": "Aspergillus spp. (Low risk if moisture < 12%)",
+    "insects": "Rice Weevil (Sitophilus oryzae)",
+    "risk_score": 15
+  },
+  "Maize": {
+    "temp": "10-12°C",
+    "hum": "55-60%",
+    "pres": "Dry bulk aeration silos. Maintain low moisture.",
+    "shelf_life": "9-12 months",
+    "fungus": "Aspergillus flavus (Aflatoxin risk if warm/wet)",
+    "insects": "Maize Weevil, Angoumois Grain Moth",
+    "risk_score": 25
+  },
+  "Jute": {
+    "temp": "15-20°C",
+    "hum": "65-70%",
+    "pres": "Store in dry ventilated warehouse bay away from moisture.",
+    "shelf_life": "12 months",
+    "fungus": "Penicillium mold on damp fibers",
+    "insects": "Warehouse beetles",
+    "risk_score": 20
+  },
+  "Cotton": {
+    "temp": "18-22°C",
+    "hum": "55-62%",
+    "pres": "Store baled cotton in dry ventilated bays with fire protection.",
+    "shelf_life": "24 months",
+    "fungus": "Mildew under damp storage conditions",
+    "insects": "Pink bollworm larvae residual controls",
+    "risk_score": 10
+  },
+  "Coconut": {
+    "temp": "0-2°C (copra) or 15°C (whole)",
+    "hum": "75-80%",
+    "pres": "Keep whole nuts in dry well-ventilated crates.",
+    "shelf_life": "3-4 months",
+    "fungus": "Copra mold, Thielaviopsis rot",
+    "insects": "Red palm weevil residual larvae",
+    "risk_score": 30
+  },
+  "Papaya": {
+    "temp": "10-12°C",
+    "hum": "85-90%",
+    "pres": "Crate store with ethylene absorbents.",
+    "shelf_life": "1-3 weeks",
+    "fungus": "Anthracnose fruit rot",
+    "insects": "Fruit flies",
+    "risk_score": 85
+  },
+  "Orange": {
+    "temp": "5-8°C",
+    "hum": "85-90%",
+    "pres": "Ventilated plastic crates. Avoid stack pressure.",
+    "shelf_life": "3-8 weeks",
+    "fungus": "Penicillium digitatum (Green mold)",
+    "insects": "Citrus fruit borer",
+    "risk_score": 45
+  },
+  "Apple": {
+    "temp": "0-2°C",
+    "hum": "90-95%",
+    "pres": "Controlled atmosphere storage (low oxygen, high CO2).",
+    "shelf_life": "6-10 months",
+    "fungus": "Blue mold, bitter rot",
+    "insects": "Codling moth residual larvae",
+    "risk_score": 20
+  },
+  "Muskmelon": {
+    "temp": "3-5°C",
+    "hum": "85-90%",
+    "pres": "Chilled ventilated crates. Avoid stacking.",
+    "shelf_life": "2-3 weeks",
+    "fungus": "Fusarium rot, Alternaria rot",
+    "insects": "Fruit fly pupae",
+    "risk_score": 70
+  },
+  "Watermelon": {
+    "temp": "10-15°C",
+    "hum": "85-90%",
+    "pres": "Single layer straw bedding in ventilated shade rooms.",
+    "shelf_life": "2-3 weeks",
+    "fungus": "Anthracnose, Phytophthora fruit rot",
+    "insects": "Melon fruit fly",
+    "risk_score": 50
+  },
+  "Grapes": {
+    "temp": "-1 to 0°C",
+    "hum": "90-95%",
+    "pres": "Chilled store with sulfur dioxide pad sheets.",
+    "shelf_life": "2-6 months",
+    "fungus": "Botrytis cinerea (Gray mold)",
+    "insects": "Mealybugs residual",
+    "risk_score": 60
+  },
+  "Mango": {
+    "temp": "12-13°C",
+    "hum": "85-90%",
+    "pres": "Hot water treated fruit crates. Ethylene scrubbers.",
+    "shelf_life": "2-4 weeks",
+    "fungus": "Anthracnose, Stem-end rot",
+    "insects": "Mango pulp weevil",
+    "risk_score": 75
+  },
+  "Banana": {
+    "temp": "13-14°C",
+    "hum": "85-90%",
+    "pres": "Store green bunches hanging or in padded boxes.",
+    "shelf_life": "2-4 weeks",
+    "fungus": "Crown rot disease (Colletotrichum)",
+    "insects": "Banana weevil residues",
+    "risk_score": 65
+  },
+  "Pomegranate": {
+    "temp": "5-6°C",
+    "hum": "90-95%",
+    "pres": "Chilled store in paper wrap crates.",
+    "shelf_life": "2-4 months",
+    "fungus": "Heart rot (Alternaria)",
+    "insects": "Pomegranate butterfly larvae residues",
+    "risk_score": 40
+  },
+  "Lentil": {
+    "temp": "12-15°C",
+    "hum": "50-60%",
+    "pres": "Store in dry moisture-proof gunny bags.",
+    "shelf_life": "18-24 months",
+    "fungus": "Rhizoctonia seed decay",
+    "insects": "Pulse beetle (Callosobruchus)",
+    "risk_score": 15
+  },
+  "Blackgram": {
+    "temp": "12-15°C",
+    "hum": "50-60%",
+    "pres": "Hermetic bag storage to prevent insect hatching.",
+    "shelf_life": "18-24 months",
+    "fungus": "Macrophomina seed decay",
+    "insects": "Pulse beetle",
+    "risk_score": 15
+  },
+  "Mungbean": {
+    "temp": "12-15°C",
+    "hum": "50-60%",
+    "pres": "Hermetic silos or standard gunny bags with Neem leaves.",
+    "shelf_life": "18-24 months",
+    "fungus": "Fusarium decay",
+    "insects": "Bruchin beetle",
+    "risk_score": 20
+  },
+  "Mothbeans": {
+    "temp": "15-18°C",
+    "hum": "45-55%",
+    "pres": "Extremely dry storage. Standard bags inside aerated warehouses.",
+    "shelf_life": "18-24 months",
+    "fungus": "Seed rot (Low risk)",
+    "insects": "Pulse beetles",
+    "risk_score": 10
+  },
+  "Kidneybeans": {
+    "temp": "10-12°C",
+    "hum": "50-60%",
+    "pres": "Dry store in air-tight bins or cold dry rooms.",
+    "shelf_life": "12-18 months",
+    "fungus": "Anthracnose seed spot",
+    "insects": "Bean weevil (Acanthoscelides)",
+    "risk_score": 20
+  },
+  "Pigeonpeas": {
+    "temp": "12-15°C",
+    "hum": "50-60%",
+    "pres": "Gunny bag stacks inside ventilated brick warehouses.",
+    "shelf_life": "12-18 months",
+    "fungus": "Fusarium seed decay",
+    "insects": "Pulse beetles, pod borers residual pupae",
+    "risk_score": 15
+  },
+  "Chickpea": {
+    "temp": "12-15°C",
+    "hum": "50-60%",
+    "pres": "Silo bulk storage. Fumigate with Aluminum Phosphide.",
+    "shelf_life": "18-24 months",
+    "fungus": "Ascochyta blight spore residues",
+    "insects": "Pulse beetle",
+    "risk_score": 15
+  },
+  "Coffee": {
+    "temp": "15-20°C",
+    "hum": "60-65%",
+    "pres": "Jute bags lined with GrainPro hermetic barriers. Keep dry.",
+    "shelf_life": "12 months (green beans)",
+    "fungus": "Aspergillus ochraceus (Ochratoxin A risk)",
+    "insects": "Coffee Berry Borer (Hypothenemus)",
+    "risk_score": 25
+  }
+}

@@ -1,0 +1,14 @@
+Flask
+Werkzeug
+numpy
+pandas
+scikit-learn
+xgboost
+qiskit
+qiskit-machine-learning
+matplotlib
+seaborn
+pymongo
+shap
+pdfkit
+Flask-PyMongo
