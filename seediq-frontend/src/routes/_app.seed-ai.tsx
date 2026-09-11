@@ -42,6 +42,11 @@ function SeedAI() {
       if (res.status === 401) {
         throw new Error("You are not logged in or your session has expired.");
       }
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const text = await res.text();
+        throw new Error(text.slice(0, 150) || "Server returned non-JSON response.");
+      }
       const data = await res.json();
       if (data.error) {
         throw new Error(data.error);
