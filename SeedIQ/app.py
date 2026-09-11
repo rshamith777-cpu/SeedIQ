@@ -595,6 +595,7 @@ This code expires in 10 minutes.
 @app.route('/api/diagnostics/smtp', methods=['GET'])
 def smtp_diagnostics():
     resend_api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
+    resend_sender = (os.environ.get("RESEND_SENDER_EMAIL") or "onboarding@resend.dev").strip()
     resend_configured = bool(resend_api_key)
     
     sender_email = (os.environ.get("GMAIL_SENDER_EMAIL") or "").strip()
