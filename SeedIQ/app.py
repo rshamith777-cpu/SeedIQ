@@ -503,12 +503,27 @@ This code expires in 10 minutes.
         msg.attach(MIMEText(text_content, 'plain'))
         msg.attach(MIMEText(html_content, 'html'))
         
-        with smtplib.SMTP('smtp.gmail.com', 587, timeout=12) as server:
+        server = None
+        try:
+            # Try standard STARTTLS on port 587
+            server = smtplib.SMTP('smtp.gmail.com', 587, timeout=12)
             server.ehlo()
             server.starttls()
             server.ehlo()
             server.login(sender_email, sender_password)
             server.send_message(msg)
+        except (OSError, smtplib.SMTPConnectError):
+            # Fallback to SSL on port 465 (required by cloud providers like Render/AWS that filter port 587)
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=12)
+            server.ehlo()
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+        finally:
+            if server:
+                try:
+                    server.quit()
+                except Exception:
+                    pass
             
         print(f"   [SMTP_SUCCESS] Verification email successfully accepted by Gmail for {recipient_email}")
         print("-------------------------------------------------------\n")
@@ -546,12 +561,20 @@ def smtp_diagnostics():
             "message": "Gmail SMTP credentials are not configured. Please set GMAIL_SENDER_EMAIL and GMAIL_APP_PASSWORD in C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\.env"
         }), 200
         
+    server = None
     try:
-        with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:
+        try:
+            server = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
             server.ehlo()
             server.starttls()
             server.ehlo()
             server.login(sender_email, sender_password)
+            active_port = 587
+        except (OSError, smtplib.SMTPConnectError):
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
+            server.ehlo()
+            server.login(sender_email, sender_password)
+            active_port = 465
             
         parts = sender_email.split('@')
         masked = (parts[0][:2] + "***@" + parts[1]) if len(parts) == 2 else "***"
@@ -561,9 +584,10 @@ def smtp_diagnostics():
             "sender_email_masked": masked,
             "gmail_app_password_configured": True,
             "smtp_connection": "connected",
+            "smtp_port_used": active_port,
             "tls_handshake": "successful",
             "authentication": "authenticated",
-            "message": "Gmail SMTP is fully configured and operational."
+            "message": f"Gmail SMTP is fully configured and operational via port {active_port}."
         }), 200
     except smtplib.SMTPAuthenticationError as e:
         return jsonify({
@@ -582,8 +606,14 @@ def smtp_diagnostics():
             "gmail_sender_configured": True,
             "gmail_app_password_configured": True,
             "error_type": type(e).__name__,
-            "message": f"SMTP connection error: {type(e).__name__}"
+            "message": f"SMTP connection error: {type(e).__name__} ({e})"
         }), 200
+    finally:
+        if server:
+            try:
+                server.quit()
+            except Exception:
+                pass
 
 def validate_password_strength(password):
     if len(password) < 8:
