@@ -612,6 +612,7 @@ def smtp_diagnostics():
             "resend_configured": True,
             "resend_key_masked": masked_resend,
             "resend_sender": resend_sender,
+            "version": "v1.0.3-useragent",
             "message": "Resend API key is configured. Outbound emails will use Resend HTTPS API."
         }), 200
     
