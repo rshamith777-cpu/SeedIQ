@@ -505,16 +505,16 @@ This code expires in 10 minutes.
         
         server = None
         try:
-            # Try standard STARTTLS on port 587
-            server = smtplib.SMTP('smtp.gmail.com', 587, timeout=12)
-            server.ehlo()
-            server.starttls()
+            # Connect directly via SSL on port 465 (reliable on all cloud providers like Render)
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
             server.ehlo()
             server.login(sender_email, sender_password)
             server.send_message(msg)
-        except (OSError, smtplib.SMTPConnectError):
-            # Fallback to SSL on port 465 (required by cloud providers like Render/AWS that filter port 587)
-            server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=12)
+        except Exception:
+            # Fallback to STARTTLS on port 587
+            server = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
+            server.ehlo()
+            server.starttls()
             server.ehlo()
             server.login(sender_email, sender_password)
             server.send_message(msg)
@@ -564,17 +564,19 @@ def smtp_diagnostics():
     server = None
     try:
         try:
+            # Direct SSL port 465 connection
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
+            server.ehlo()
+            server.login(sender_email, sender_password)
+            active_port = 465
+        except Exception:
+            # Fallback to STARTTLS port 587
             server = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
             server.ehlo()
             server.starttls()
             server.ehlo()
             server.login(sender_email, sender_password)
             active_port = 587
-        except (OSError, smtplib.SMTPConnectError):
-            server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
-            server.ehlo()
-            server.login(sender_email, sender_password)
-            active_port = 465
             
         parts = sender_email.split('@')
         masked = (parts[0][:2] + "***@" + parts[1]) if len(parts) == 2 else "***"
