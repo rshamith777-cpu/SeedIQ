@@ -1,0 +1,10 @@
+Flask
+Werkzeug
+numpy
+pandas
+scikit-learn
+xgboost
+flask-cors
+python-dotenv
+pymongo
+Flask-PyMongo
