@@ -854,7 +854,11 @@ def register_verify_otp():
             conn.commit()
             return jsonify({"status": "error", "message": "Too many attempts. Please request a new code."}), 400
             
-        if record['otp'] != otp:
+        stored_otp = str(record['otp']).strip()
+        provided_otp = str(otp).strip()
+        print(f"[OTP_VERIFY] Checking email: {email} | Provided: '{provided_otp}' | Stored: '{stored_otp}'")
+        
+        if stored_otp != provided_otp:
             conn.execute('UPDATE otp_codes SET attempts = attempts + 1 WHERE email = ? AND purpose = "registration"', (email,))
             conn.commit()
             return jsonify({"status": "error", "message": "Verification code is incorrect."}), 400
