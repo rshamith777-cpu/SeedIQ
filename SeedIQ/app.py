@@ -177,6 +177,20 @@ def init_db():
                 
         conn.commit()
 
+def log_prediction(user_id, prediction_type, inputs, results):
+    """Safely logs predictions to the database for user telemetry."""
+    if not user_id:
+        return
+    try:
+        with get_db() as conn:
+            conn.execute('''
+                INSERT INTO predictions (user_id, prediction_type, inputs, results)
+                VALUES (?, ?, ?, ?)
+            ''', (user_id, prediction_type, json.dumps(inputs), json.dumps(results)))
+            conn.commit()
+    except Exception as e:
+        print(f"Failed to log prediction to db: {e}")
+
 def initialize_seediq_accounts():
     """Initializes fixed Admin and Researcher accounts from environment variables."""
     admin_email = os.environ.get("SEEDIQ_ADMIN_EMAIL", "admin@seediq.ai").strip().lower()
@@ -1365,8 +1379,7 @@ def upload_dataset():
 
 @app.route('/api/crop-recommendation', methods=['GET', 'POST'])
 def crop_recommendation():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    user_id = session.get('user_id') or 1
         
     result = None
     soil_analysis = None
@@ -1528,7 +1541,7 @@ def crop_recommendation():
             except Exception as e:
                 print(f"Error reading crop_disease.json: {e}")
         
-        log_prediction(session['user_id'], 'crop', {
+        log_prediction(user_id, 'crop', {
             'nitrogen': n, 'phosphorus': p, 'potassium': k,
             'temperature': temp, 'humidity': hum, 'ph': ph, 'rainfall': rain
         }, result)
@@ -1543,8 +1556,7 @@ def crop_recommendation():
 
 @app.route('/api/yield-prediction', methods=['GET', 'POST'])
 def yield_prediction():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    user_id = session.get('user_id') or 1
         
     result = None
     market_analysis = None
@@ -1651,7 +1663,7 @@ def yield_prediction():
             'trend': market_info['trend']
         }
         
-        log_prediction(session['user_id'], 'yield', {
+        log_prediction(user_id, 'yield', {
             'crop': crop, 'season': season, 'area': area
         }, result)
             
@@ -1664,8 +1676,7 @@ def yield_prediction():
 
 @app.route('/api/seed-viability', methods=['GET', 'POST'])
 def seed_viability():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    user_id = session.get('user_id') or 1
         
     result = None
     if request.method == 'POST':
@@ -1719,7 +1730,7 @@ def seed_viability():
                 'ensemble': val
             }
         
-        log_prediction(session['user_id'], 'seed', {
+        log_prediction(user_id, 'seed', {
             'moisture': moisture, 'weight': weight
         }, result)
             
@@ -1728,8 +1739,7 @@ def seed_viability():
 
 @app.route('/api/storage-recommendation', methods=['GET', 'POST'])
 def storage_recommendation():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    user_id = session.get('user_id') or 1
         
     result = None
     crop = None
@@ -1745,7 +1755,8 @@ def storage_recommendation():
     crops = sorted(list(db.keys())) if db else ["Rice", "Wheat", "Maize", "Sugarcane", "Cotton"]
     
     if request.method == 'POST':
-        crop = request.form.get('crop')
+        req_data = request.get_json() if request.is_json else request.form
+        crop = req_data.get('crop')
         result = db.get(crop, {
             "temp": "15-25°C", 
             "hum": "50-70%", 
@@ -1755,13 +1766,19 @@ def storage_recommendation():
             "insects": "Use standard grain protective bags.",
             "risk_score": 30
         })
+        log_prediction(user_id, 'storage', {'crop': crop}, result)
+        
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'result': result, 'crop': crop, 'crops': crops})
+        
+    if request.is_json or request.headers.get('Accept') == 'application/json':
+        return jsonify({'result': result, 'crop': crop, 'crops': crops})
         
     return render_template('storage_recommendation.html', result=result, crop=crop, crops=crops)
 
 @app.route('/api/quantum-ml', methods=['GET', 'POST'])
 def quantum_ml():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    user_id = session.get('user_id') or 1
         
     result = None
     inputs = {}
@@ -1896,11 +1913,17 @@ def quantum_ml():
             }
         
         if result and 'error' not in result:
-            log_prediction(session['user_id'], 'quantum', {
+            log_prediction(user_id, 'quantum', {
                 'nitrogen': n, 'phosphorus': p, 'potassium': k, 'ph': ph,
                 'crop': crop, 'season': season, 'area': area
             }, result)
             
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'result': result, 'inputs': inputs})
+            
+    if request.is_json or request.headers.get('Accept') == 'application/json':
+        return jsonify({'result': result, 'inputs': inputs})
+        
     return render_template('quantum_ml.html', result=result, inputs=inputs)
 
 @app.route('/admin')
