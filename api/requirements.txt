@@ -1,7 +1,0 @@
-Flask
-Werkzeug
-numpy
-pandas
-scikit-learn
-flask-cors
-python-dotenv
