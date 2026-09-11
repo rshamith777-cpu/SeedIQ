@@ -570,11 +570,39 @@ This code expires in 10 minutes.
 
 @app.route('/api/diagnostics/smtp', methods=['GET'])
 def smtp_diagnostics():
+    resend_api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
+    resend_configured = bool(resend_api_key)
+    
     sender_email = (os.environ.get("GMAIL_SENDER_EMAIL") or "").strip()
     sender_password = (os.environ.get("GMAIL_APP_PASSWORD") or "").strip()
-    
     is_email_set = bool(sender_email)
     is_pass_set = bool(sender_password)
+    
+    if resend_configured:
+        # Test Resend API key
+        try:
+            import urllib.request
+            req = urllib.request.Request(
+                "https://api.resend.com/api-keys",
+                headers={"Authorization": f"Bearer {resend_api_key}"},
+                method="GET"
+            )
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                if resp.status == 200:
+                    return jsonify({
+                        "status": "ready",
+                        "provider": "Resend HTTPS API (Port 443)",
+                        "resend_configured": True,
+                        "message": "Resend API is fully authenticated and active! Emails will send over HTTPS."
+                    }), 200
+        except Exception as err:
+            return jsonify({
+                "status": "resend_error",
+                "provider": "Resend",
+                "resend_configured": True,
+                "error": str(err),
+                "message": f"Resend API key error: {err}. Please verify the key at resend.com"
+            }), 200
     
     if not is_email_set or not is_pass_set:
         return jsonify({
