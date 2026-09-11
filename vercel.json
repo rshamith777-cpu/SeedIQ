@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd seediq-frontend && npm install && npm run build",
-  "outputDirectory": "seediq-frontend/.output/public",
+  "buildCommand": "cd seediq-frontend && npm install && npm run build && cp -r .vercel/output/static public 2>/dev/null || cp -r .output/public public 2>/dev/null || true",
+  "outputDirectory": "seediq-frontend/public",
   "rewrites": [
     {
       "source": "/api/(.*)",
