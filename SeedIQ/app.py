@@ -493,8 +493,42 @@ This code expires in 10 minutes.
 {notice_text}
 """
     
+    # 1. Try Brevo (Sendinblue) HTTPS API (Port 443 - Never blocked on cloud providers)
+    brevo_api_key = (os.environ.get("BREVO_API_KEY") or "").strip()
+    brevo_sender = (os.environ.get("BREVO_SENDER_EMAIL") or sender_email or "no-reply@seediq.ai").strip()
+    
+    if brevo_api_key:
+        try:
+            import urllib.request
+            print(f"   [BREVO_ATTEMPT] Dispatching email via Brevo HTTPS API to {recipient_email}...")
+            payload = {
+                "sender": {"name": "SeedIQ Platform", "email": brevo_sender},
+                "to": [{"email": recipient_email}],
+                "subject": subject,
+                "htmlContent": html_content,
+                "textContent": text_content
+            }
+            req = urllib.request.Request(
+                "https://api.brevo.com/v3/smtp/email",
+                data=json.dumps(payload).encode('utf-8'),
+                headers={
+                    "accept": "application/json",
+                    "api-key": brevo_api_key,
+                    "content-type": "application/json"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=12) as response:
+                if response.status in (200, 201, 202):
+                    print(f"   [BREVO_SUCCESS] Real verification email delivered via Brevo to {recipient_email}")
+                    print("-------------------------------------------------------\n")
+                    return True, "Verification email successfully delivered to your inbox."
+        except Exception as e:
+            print(f"   [BREVO_FAILURE] Brevo API error: {e}. Falling back to standard SMTP...")
+
+    # 2. Standard SMTP Dispatcher (Ports 465 / 587)
     try:
-        print(f"   [SMTP_ATTEMPT] Connecting to smtp.gmail.com:587 with STARTTLS...")
+        print(f"   [SMTP_ATTEMPT] Connecting to smtp.gmail.com...")
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
         msg['From'] = f"SeedIQ <{sender_email}>"
@@ -505,13 +539,11 @@ This code expires in 10 minutes.
         
         server = None
         try:
-            # Connect directly via SSL on port 465 (reliable on all cloud providers like Render)
             server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
             server.ehlo()
             server.login(sender_email, sender_password)
             server.send_message(msg)
         except Exception:
-            # Fallback to STARTTLS on port 587
             server = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
             server.ehlo()
             server.starttls()
@@ -530,13 +562,8 @@ This code expires in 10 minutes.
         return True, "Verification email successfully delivered to your Gmail inbox."
     except smtplib.SMTPAuthenticationError as e:
         print(f"   [SMTP_FAILURE] SMTPAuthenticationError: {e}")
-        print("   -> Diagnostic: Gmail rejected credentials. Verify you generated a 16-character Google App Password.")
         print("-------------------------------------------------------\n")
         return False, "Authentication failed with Gmail SMTP server. Check your Gmail App Password."
-    except smtplib.SMTPConnectError as e:
-        print(f"   [SMTP_FAILURE] SMTPConnectError: {e}")
-        print("-------------------------------------------------------\n")
-        return False, "Unable to connect to smtp.gmail.com on port 587."
     except Exception as e:
         print(f"   [SMTP_FAILURE] {type(e).__name__}: {e}")
         print("-------------------------------------------------------\n")
