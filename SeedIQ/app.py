@@ -493,38 +493,37 @@ This code expires in 10 minutes.
 {notice_text}
 """
     
-    # 1. Try Brevo (Sendinblue) HTTPS API (Port 443 - Never blocked on cloud providers)
-    brevo_api_key = (os.environ.get("BREVO_API_KEY") or "").strip()
-    brevo_sender = (os.environ.get("BREVO_SENDER_EMAIL") or sender_email or "no-reply@seediq.ai").strip()
+    # 1. Try Resend HTTPS API (100% Free - 3000 emails/mo, zero socket blocks on cloud)
+    resend_api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
+    resend_sender = (os.environ.get("RESEND_SENDER_EMAIL") or "onboarding@resend.dev").strip()
     
-    if brevo_api_key:
+    if resend_api_key:
         try:
             import urllib.request
-            print(f"   [BREVO_ATTEMPT] Dispatching email via Brevo HTTPS API to {recipient_email}...")
+            print(f"   [RESEND_ATTEMPT] Dispatching email via Resend API to {recipient_email}...")
             payload = {
-                "sender": {"name": "SeedIQ Platform", "email": brevo_sender},
-                "to": [{"email": recipient_email}],
+                "from": f"SeedIQ <{resend_sender}>",
+                "to": [recipient_email],
                 "subject": subject,
-                "htmlContent": html_content,
-                "textContent": text_content
+                "html": html_content,
+                "text": text_content
             }
             req = urllib.request.Request(
-                "https://api.brevo.com/v3/smtp/email",
+                "https://api.resend.com/emails",
                 data=json.dumps(payload).encode('utf-8'),
                 headers={
-                    "accept": "application/json",
-                    "api-key": brevo_api_key,
-                    "content-type": "application/json"
+                    "Authorization": f"Bearer {resend_api_key}",
+                    "Content-Type": "application/json"
                 },
                 method="POST"
             )
             with urllib.request.urlopen(req, timeout=12) as response:
                 if response.status in (200, 201, 202):
-                    print(f"   [BREVO_SUCCESS] Real verification email delivered via Brevo to {recipient_email}")
+                    print(f"   [RESEND_SUCCESS] Real verification email delivered via Resend to {recipient_email}")
                     print("-------------------------------------------------------\n")
                     return True, "Verification email successfully delivered to your inbox."
         except Exception as e:
-            print(f"   [BREVO_FAILURE] Brevo API error: {e}. Falling back to standard SMTP...")
+            print(f"   [RESEND_FAILURE] Resend API error: {e}. Falling back to standard SMTP...")
 
     # 2. Standard SMTP Dispatcher (Ports 465 / 587)
     try:
