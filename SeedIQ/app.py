@@ -421,13 +421,16 @@ def send_real_email_otp(recipient_email, otp, purpose="registration"):
     print(f"   GMAIL_APP_PASSWORD configured: {'TRUE' if sender_password else 'FALSE'}")
     print(f"   Gmail SMTP configuration: {'READY' if (sender_email and sender_password) else 'NOT READY'}")
     
-    if not sender_email or not sender_password:
-        print("   [SMTP_FAILURE] Missing Gmail SMTP configuration.")
-        print("   -> To deliver live emails to inboxes, set GMAIL_SENDER_EMAIL and GMAIL_APP_PASSWORD in C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\.env")
+    resend_api_key = (os.environ.get("RESEND_API_KEY") or "").strip()
+    resend_sender = (os.environ.get("RESEND_SENDER_EMAIL") or "onboarding@resend.dev").strip()
+
+    if not resend_api_key and (not sender_email or not sender_password):
+        print("   [EMAIL_FAILURE] Neither Resend API key nor Gmail SMTP credentials are configured.")
+        print("   -> Set RESEND_API_KEY or GMAIL_SENDER_EMAIL + GMAIL_APP_PASSWORD in environment.")
         print("-------------------------------------------------------\n")
         if app.config.get('TESTING'):
             return True, "Simulated delivery (testing mode)."
-        return False, "Unable to send verification email. Gmail SMTP credentials are not configured on the server."
+        return False, "Unable to send verification email. Email credentials (Resend or Gmail) are not configured on the server."
         
     if purpose == "password_reset":
         subject = "SeedIQ — Password Reset Verification"
@@ -500,6 +503,7 @@ This code expires in 10 minutes.
     if resend_api_key:
         try:
             import urllib.request
+            import urllib.error
             print(f"   [RESEND_ATTEMPT] Dispatching email via Resend API to {recipient_email}...")
             payload = {
                 "from": f"SeedIQ <{resend_sender}>",
@@ -522,10 +526,24 @@ This code expires in 10 minutes.
                     print(f"   [RESEND_SUCCESS] Real verification email delivered via Resend to {recipient_email}")
                     print("-------------------------------------------------------\n")
                     return True, "Verification email successfully delivered to your inbox."
+        except urllib.error.HTTPError as e:
+            err_body = ""
+            try:
+                err_body = e.read().decode('utf-8')
+            except Exception:
+                pass
+            print(f"   [RESEND_FAILURE] Resend API HTTP error {e.code}: {err_body}")
+            last_resend_error = f"Resend {e.code}: {err_body}"
         except Exception as e:
             print(f"   [RESEND_FAILURE] Resend API error: {e}. Falling back to standard SMTP...")
+            last_resend_error = str(e)
+    else:
+        last_resend_error = "RESEND_API_KEY is not set on server"
 
     # 2. Standard SMTP Dispatcher (Ports 465 / 587)
+    if not sender_email or not sender_password:
+        return False, f"Email delivery failed: {last_resend_error}"
+
     try:
         print(f"   [SMTP_ATTEMPT] Connecting to smtp.gmail.com...")
         msg = MIMEMultipart('alternative')
@@ -562,11 +580,17 @@ This code expires in 10 minutes.
     except smtplib.SMTPAuthenticationError as e:
         print(f"   [SMTP_FAILURE] SMTPAuthenticationError: {e}")
         print("-------------------------------------------------------\n")
-        return False, "Authentication failed with Gmail SMTP server. Check your Gmail App Password."
+        msg = "Authentication failed with Gmail SMTP server. Check your Gmail App Password."
+        if resend_api_key:
+            msg += f" (Resend attempt: {last_resend_error})"
+        return False, msg
     except Exception as e:
         print(f"   [SMTP_FAILURE] {type(e).__name__}: {e}")
         print("-------------------------------------------------------\n")
-        return False, f"Email delivery failed: {type(e).__name__}"
+        msg = f"Email delivery failed: {type(e).__name__} ({e})"
+        if resend_api_key:
+            msg += f" | Resend: {last_resend_error}"
+        return False, msg
 
 @app.route('/api/diagnostics/smtp', methods=['GET'])
 def smtp_diagnostics():
@@ -579,30 +603,15 @@ def smtp_diagnostics():
     is_pass_set = bool(sender_password)
     
     if resend_configured:
-        # Test Resend API key
-        try:
-            import urllib.request
-            req = urllib.request.Request(
-                "https://api.resend.com/api-keys",
-                headers={"Authorization": f"Bearer {resend_api_key}"},
-                method="GET"
-            )
-            with urllib.request.urlopen(req, timeout=8) as resp:
-                if resp.status == 200:
-                    return jsonify({
-                        "status": "ready",
-                        "provider": "Resend HTTPS API (Port 443)",
-                        "resend_configured": True,
-                        "message": "Resend API is fully authenticated and active! Emails will send over HTTPS."
-                    }), 200
-        except Exception as err:
-            return jsonify({
-                "status": "resend_error",
-                "provider": "Resend",
-                "resend_configured": True,
-                "error": str(err),
-                "message": f"Resend API key error: {err}. Please verify the key at resend.com"
-            }), 200
+        masked_resend = resend_api_key[:6] + "..." + resend_api_key[-4:] if len(resend_api_key) > 10 else "***"
+        return jsonify({
+            "status": "ready",
+            "provider": "Resend HTTPS API (Port 443)",
+            "resend_configured": True,
+            "resend_key_masked": masked_resend,
+            "resend_sender": resend_sender,
+            "message": "Resend API key is configured. Outbound emails will use Resend HTTPS API."
+        }), 200
     
     if not is_email_set or not is_pass_set:
         return jsonify({
@@ -795,7 +804,7 @@ def register_request_otp():
         )
         conn.commit()
         
-    # Attempt real email dispatch via SMTP
+    # Attempt real email dispatch via SMTP / Resend API
     email_success, email_status_msg = send_real_email_otp(email, otp, purpose="registration")
     
     if not email_success:
@@ -808,7 +817,7 @@ def register_request_otp():
             "status": "error",
             "success": False,
             "email_sent": False,
-            "message": "We could not send the verification email. Please try again."
+            "message": email_status_msg or "We could not send the verification email. Please try again."
         }), 500
         
     return jsonify({
@@ -956,7 +965,7 @@ def forgot_password_request_otp():
             "status": "error",
             "success": False,
             "email_sent": False,
-            "message": "We could not send the verification email. Please try again."
+            "message": email_status_msg or "We could not send the verification email. Please try again."
         }), 500
         
     return jsonify({
