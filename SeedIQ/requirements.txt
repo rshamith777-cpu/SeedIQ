@@ -12,3 +12,6 @@ pymongo
 shap
 pdfkit
 Flask-PyMongo
+gunicorn
+flask-cors
+python-dotenv
