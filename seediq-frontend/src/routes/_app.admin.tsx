@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { 
   ShieldCheck, Play, RefreshCw, Users, Loader2, Activity, 
   Target, TrendingUp, Zap, BarChart, AlertTriangle, Shield,
-  Award, BookOpen, Layers, CheckCircle2, Cpu, Sparkles
+  Award, BookOpen, Layers, CheckCircle2, Cpu, Sparkles, Key
 } from "lucide-react";
 import { useState } from "react";
 import { PageHeader } from "@/components/seediq/page-header";
@@ -340,39 +340,83 @@ function Admin() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <div className="rounded-2xl glass p-6">
+        <div className="rounded-3xl border border-white/10 bg-black/40 p-6 backdrop-blur-xl shadow-2xl">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-secondary" />
-              <h3 className="font-display text-lg font-semibold">User Management</h3>
+              <Key className="h-5 w-5 text-emerald-400" />
+              <h3 className="font-display text-lg font-semibold text-white">Privileged System Credentials</h3>
             </div>
-            <span className="rounded-full glass px-3 py-1 text-[10px] uppercase tracking-widest text-secondary">4 users</span>
+            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] uppercase tracking-widest text-emerald-300 font-semibold">
+              Authorized Access
+            </span>
           </div>
 
-          <div className="space-y-3">
-            {[
-              { u: "shamith", r: "ADMIN" },
-              { u: "agronomist", r: "RESEARCHER" },
-              { u: "farmer_john", r: "FARMER" },
-              { u: "test@gmail.com", r: "USER" },
-            ].map((u) => (
-              <div key={u.u} className="flex items-center justify-between rounded-xl border border-white/5 bg-black/40 p-4 transition hover:bg-white/5 hover:border-emerald-500/20">
+          <p className="text-xs text-emerald-100/60 mb-5">
+            Designated high-privilege credentials for administrative governance and scientific research.
+          </p>
+
+          <div className="space-y-4">
+            {/* Administrator Account */}
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5 transition hover:border-emerald-500/50 shadow-inner">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 font-display text-sm font-semibold text-white shadow-[0_0_15px_-3px_hsl(150_70%_45%/0.5)]">
-                    {u.u[0].toUpperCase()}
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
+                    <ShieldCheck className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="font-medium text-white">{u.u}</div>
-                    <div className="text-[10px] uppercase tracking-widest text-emerald-400/60">Current: {u.r}</div>
+                    <div className="font-display font-semibold text-white">System Administrator</div>
+                    <div className="text-[10px] uppercase tracking-widest text-emerald-400 font-mono">Role: Admin</div>
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  {["FARMER", "RESEARCHER", "USER", "ADMIN"].map((t) => (
-                    <button key={t} className={`rounded-full px-2.5 py-1 text-[9px] font-semibold uppercase tracking-widest transition ${u.r === t ? "border border-emerald-500/50 bg-emerald-500/10 text-emerald-400 shadow-[0_0_10px_-2px_hsl(150_70%_45%/0.3)]" : "border border-white/5 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white"}`}>{t}</button>
-                  ))}
+                <span className="rounded-md bg-emerald-500/20 px-2.5 py-1 text-[10px] font-bold text-emerald-300 border border-emerald-500/40">
+                  FULL PRIVILEGES
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-white/10 font-mono text-xs">
+                <div className="bg-black/50 rounded-xl p-3 border border-white/5">
+                  <span className="text-[10px] uppercase tracking-wider text-white/40 block mb-1">Account ID / Email</span>
+                  <div className="text-white font-bold select-all break-all">admin@seediq.ai</div>
+                  <div className="text-white/40 text-[10px] mt-0.5 font-sans">(or username: admin)</div>
+                </div>
+                <div className="bg-black/50 rounded-xl p-3 border border-white/5">
+                  <span className="text-[10px] uppercase tracking-wider text-white/40 block mb-1">Password</span>
+                  <div className="text-emerald-400 font-bold text-sm select-all">admin123</div>
+                  <div className="text-emerald-400/60 text-[10px] mt-0.5 font-sans">Retraining & User Authority</div>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Researcher Account */}
+            <div className="rounded-2xl border border-sky-500/30 bg-sky-950/20 p-5 transition hover:border-sky-500/50 shadow-inner">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-sky-500/20 text-sky-400 font-bold border border-sky-500/30">
+                    <Cpu className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="font-display font-semibold text-white">Lead ML & Quantum Researcher</div>
+                    <div className="text-[10px] uppercase tracking-widest text-sky-400 font-mono">Role: Researcher</div>
+                  </div>
+                </div>
+                <span className="rounded-md bg-sky-500/20 px-2.5 py-1 text-[10px] font-bold text-sky-300 border border-sky-500/40">
+                  RESEARCH PRIVILEGES
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-white/10 font-mono text-xs">
+                <div className="bg-black/50 rounded-xl p-3 border border-white/5">
+                  <span className="text-[10px] uppercase tracking-wider text-white/40 block mb-1">Account ID / Email</span>
+                  <div className="text-white font-bold select-all break-all">researcher@quantum.org</div>
+                  <div className="text-white/40 text-[10px] mt-0.5 font-sans">(or username: researcher)</div>
+                </div>
+                <div className="bg-black/50 rounded-xl p-3 border border-white/5">
+                  <span className="text-[10px] uppercase tracking-wider text-white/40 block mb-1">Password</span>
+                  <div className="text-sky-400 font-bold text-sm select-all">research123</div>
+                  <div className="text-sky-400/60 text-[10px] mt-0.5 font-sans">QML & Ingestion Access</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
