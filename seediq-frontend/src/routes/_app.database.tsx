@@ -19,34 +19,44 @@ function DatabaseConsole() {
 
   useEffect(() => {
     const fetchDatasets = async () => {
+      let customDatasets: any[] = [];
       try {
-        const response = await fetch("http://localhost:5000/api/datasets");
+        const local = localStorage.getItem("seediq_uploaded_datasets");
+        if (local) {
+          customDatasets = JSON.parse(local);
+        }
+      } catch {}
+
+      try {
+        const response = await fetch("/api/datasets");
         if (response.ok) {
           const stored = await response.json();
-          const combined = [...stored, ...premiumMockDatasets];
-          setDatasets(combined);
-
-          // Generate dynamic activity logs based on the exact datasets the user has!
-          const generatedActivity = combined.map((ds, index) => {
-            // If it's a Custom Dataset, show an Ingestion log
-            if (ds.type === "Custom Dataset" && index < stored.length) {
-              return { module: "DATA INGESTION", input: ds.name, result: `Validation Passed`, time: ds.date, status: "Processed" };
-            }
-            // Otherwise generate a training log
-            return { 
-              module: ds.type.toUpperCase() + " MODEL", 
-              input: `Trained on ${ds.name}`, 
-              result: `Accuracy: ${(90 + Math.random() * 9).toFixed(1)}%`, 
-              time: ds.date, 
-              status: "Success" 
-            };
-          }).slice(0, 4); // Keep latest 4 activities
-          
-          setDynamicActivity(generatedActivity);
+          customDatasets = [...customDatasets, ...stored];
         }
-      } catch (e) {
-        console.error("Failed to fetch datasets:", e);
+      } catch {
+        // Backend not present in standalone preview
       }
+
+      const combined = [...customDatasets, ...premiumMockDatasets];
+      setDatasets(combined);
+
+      // Generate dynamic activity logs based on the exact datasets the user has!
+      const generatedActivity = combined.map((ds, index) => {
+        // If it's a Custom Dataset, show an Ingestion log
+        if (ds.type === "Custom Dataset" && index < customDatasets.length) {
+          return { module: "DATA INGESTION", input: ds.name, result: `Validation Passed`, time: ds.date, status: "Processed" };
+        }
+        // Otherwise generate a training log
+        return { 
+          module: ds.type.toUpperCase() + " MODEL", 
+          input: `Trained on ${ds.name}`, 
+          result: `Accuracy: ${(90 + Math.random() * 9).toFixed(1)}%`, 
+          time: ds.date, 
+          status: "Success" 
+        };
+      }).slice(0, 4); // Keep latest 4 activities
+      
+      setDynamicActivity(generatedActivity);
     };
 
     fetchDatasets();
