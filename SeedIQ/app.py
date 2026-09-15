@@ -1370,47 +1370,57 @@ def dashboard():
 @app.route('/api/datasets/upload', methods=['GET', 'POST'])
 def upload_dataset():
     if 'user_id' not in session or session.get('role') not in ['Admin', 'Researcher']:
-        if request.is_json:
-            return jsonify({"status": "error", "message": "Access Denied: Admin or Researcher privileges required to upload datasets."}), 403
-        flash('Access Denied: Dataset upload requires Admin or Researcher privileges.', 'error')
-        return redirect(url_for('dashboard'))
+        return jsonify({"status": "error", "message": "Access Denied: Admin or Researcher privileges required to upload datasets."}), 403
         
     if request.method == 'POST':
         if 'file' not in request.files:
-            flash('No file part', 'error')
-            return redirect(request.url)
+            return jsonify({"status": "error", "message": "No file uploaded."}), 400
         file = request.files['file']
         if file.filename == '':
-            flash('No selected file', 'error')
-            return redirect(request.url)
+            return jsonify({"status": "error", "message": "No selected file."}), 400
         if file and file.filename.endswith('.csv'):
             filename = secure_filename(file.filename)
-            save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            upload_dir = app.config.get('UPLOAD_FOLDER', 'data')
+            if not os.path.isabs(upload_dir):
+                upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), upload_dir)
+            os.makedirs(upload_dir, exist_ok=True)
+            save_path = os.path.join(upload_dir, filename)
             file.save(save_path)
             
             # Auto-route check
+            detected_type = "General CSV"
+            routed_to = filename
             try:
                 df = pd.read_csv(save_path, nrows=5)
                 from data_preprocessing import detect_dataset_type
                 dtype = detect_dataset_type(df)
                 
                 if dtype == 'crop':
-                    os.replace(save_path, os.path.join(app.config['UPLOAD_FOLDER'], 'merged_ml_dataset.csv'))
-                    flash(f'Dataset detected as Crop Recommendation. Routed to merged_ml_dataset.csv.', 'success')
+                    routed_to = 'merged_ml_dataset.csv'
+                    os.replace(save_path, os.path.join(upload_dir, routed_to))
+                    detected_type = "Crop Recommendation"
                 elif dtype == 'yield':
-                    os.replace(save_path, os.path.join(app.config['UPLOAD_FOLDER'], 'crop_production_karnataka.csv'))
-                    flash(f'Dataset detected as Yield Prediction. Routed to crop_production_karnataka.csv.', 'success')
+                    routed_to = 'crop_production_karnataka.csv'
+                    os.replace(save_path, os.path.join(upload_dir, routed_to))
+                    detected_type = "Yield Prediction"
                 elif dtype == 'seed':
-                    os.replace(save_path, os.path.join(app.config['UPLOAD_FOLDER'], 'seed_viability_data.csv'))
-                    flash(f'Dataset detected as Seed Viability. Routed to seed_viability_data.csv.', 'success')
-                else:
-                    flash(f'Dataset uploaded successfully but could not auto-detect type. Saved as {filename}.', 'info')
+                    routed_to = 'seed_viability_data.csv'
+                    os.replace(save_path, os.path.join(upload_dir, routed_to))
+                    detected_type = "Seed Viability"
             except Exception as e:
-                flash(f'Uploaded dataset successfully. Error auto-classifying: {e}', 'info')
+                print(f"Error auto-classifying dataset: {e}")
                 
-            return redirect(url_for('dashboard'))
+            return jsonify({
+                "status": "success",
+                "message": f"Dataset uploaded successfully ({detected_type}).",
+                "filename": filename,
+                "routed_to": routed_to,
+                "detected_type": detected_type
+            }), 200
             
-    return render_template('upload.html')
+        return jsonify({"status": "error", "message": "Invalid file format. Only CSV files are supported."}), 400
+            
+    return jsonify({"status": "success", "message": "Upload endpoint ready"}), 200
 
 @app.route('/api/crop-recommendation', methods=['GET', 'POST'])
 def crop_recommendation():

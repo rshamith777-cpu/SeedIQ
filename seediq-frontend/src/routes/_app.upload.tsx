@@ -139,9 +139,10 @@ function UploadPage() {
       }, 200);
 
       // Actually upload to backend
-      const response = await fetch("http://localhost:5000/api/datasets/upload", {
+      const response = await fetch("/api/datasets/upload", {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
 
       clearInterval(uploadInterval);
@@ -150,7 +151,12 @@ function UploadPage() {
       if (response.ok) {
         startValidation();
       } else {
-        setFileError("Server rejected the file.");
+        let msg = "Server rejected the file.";
+        try {
+          const errData = await response.json();
+          if (errData.message) msg = errData.message;
+        } catch {}
+        setFileError(msg);
         setUploadState("idle");
       }
     } catch (e) {
