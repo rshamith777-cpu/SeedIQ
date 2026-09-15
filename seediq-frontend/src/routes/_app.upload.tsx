@@ -110,12 +110,16 @@ function UploadPage() {
       const missingPct = totalCells > 0 ? (missingCells / totalCells) * 100 : 0;
       const qualityScore = Math.max(0, Math.round(100 - (missingPct * 2))); // penalize missing values
 
-      setDatasetStats({
+      const stats = {
         rows: rows,
         features: features,
         missingPct: Math.round(missingPct * 100) / 100,
         qualityScore: qualityScore
-      });
+      };
+      setDatasetStats(stats);
+      
+      // Auto-start preprocessing immediately upon selecting the file!
+      startProcessing(selectedFile, stats);
     };
     reader.onerror = () => {
       setFileError("Failed to read the file. Please try again.");
@@ -124,23 +128,25 @@ function UploadPage() {
     reader.readAsText(selectedFile);
   };
 
-  const processFile = async () => {
-    if (!file || fileError) return;
+  const startProcessing = async (targetFile?: File | null, stats?: any) => {
+    const activeFile = targetFile || file;
+    const activeStats = stats || datasetStats;
+    if (!activeFile || fileError) return;
     setUploadState("uploading");
     setProgress(0);
 
     // Save dataset entry locally so it is immediately available in the vault on live hosted sites
     const newDatasetEntry = {
       id: "ds-" + Date.now(),
-      name: file.name,
-      rows: datasetStats?.rows || 1000,
-      features: datasetStats?.features || 8,
-      missingPct: datasetStats?.missingPct || 0,
-      qualityScore: datasetStats?.qualityScore || 98,
+      name: activeFile.name,
+      rows: activeStats?.rows || 1000,
+      features: activeStats?.features || 8,
+      missingPct: activeStats?.missingPct || 0,
+      qualityScore: activeStats?.qualityScore || 98,
       date: new Date().toISOString().split("T")[0],
       type: "Custom Dataset",
       status: "Ready",
-      size: (file.size / 1024).toFixed(1) + " KB",
+      size: (activeFile.size / 1024).toFixed(1) + " KB",
     };
 
     try {
@@ -149,13 +155,13 @@ function UploadPage() {
     } catch {}
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", activeFile);
 
     try {
       // Progress animation for UI
       const uploadInterval = setInterval(() => {
         setProgress(p => (p < 90 ? p + Math.floor(Math.random() * 15) + 5 : p));
-      }, 150);
+      }, 120);
 
       // Attempt backend upload if an active API server is running
       try {
@@ -405,7 +411,7 @@ function UploadPage() {
               </div>
               <div className="flex items-center gap-3">
                 <button onClick={() => setFile(null)} className="p-2 text-white/40 hover:text-white transition-colors"><X className="h-5 w-5" /></button>
-                <button onClick={processFile} className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-bold text-black hover:bg-emerald-400 transition-colors">
+                <button onClick={() => startProcessing()} className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-bold text-black hover:bg-emerald-400 transition-colors">
                   <Upload className="h-4 w-4" /> Process
                 </button>
               </div>
