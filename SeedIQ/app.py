@@ -100,12 +100,13 @@ def copy_generated_assets():
 
 copy_generated_assets()
 
-DATABASE = 'seediq.db'
+DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'seediq.db')
 REGISTRY_FILE = 'training_registry.json'
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
 def init_db():
@@ -175,14 +176,27 @@ def init_db():
             except Exception:
                 pass
                 
+        # Add performance and integrity indexes
+        conn.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique 
+            ON users(email) 
+            WHERE email IS NOT NULL AND email != '';
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_predictions_user_id ON predictions(user_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_predictions_user_timestamp ON predictions(user_id, timestamp);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_predictions_user_type ON predictions(user_id, prediction_type);")
+
         conn.commit()
 
 def log_prediction(user_id, prediction_type, inputs, results):
     """Safely logs predictions to the database for user telemetry."""
-    if not user_id:
+    if not user_id or user_id == 999999 or session.get('is_guest'):
         return
     try:
         with get_db() as conn:
+            user_exists = conn.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
+            if not user_exists:
+                return
             conn.execute('''
                 INSERT INTO predictions (user_id, prediction_type, inputs, results)
                 VALUES (?, ?, ?, ?)
@@ -192,7 +206,7 @@ def log_prediction(user_id, prediction_type, inputs, results):
         print(f"Failed to log prediction to db: {e}")
 
 def initialize_seediq_accounts():
-    """Initializes fixed Admin and Researcher accounts from environment variables."""
+    """Initializes fixed Admin and Researcher accounts from environment variables without overwriting existing passwords."""
     admin_email = os.environ.get("SEEDIQ_ADMIN_EMAIL", "admin@seediq.ai").strip().lower()
     researcher_email = os.environ.get("SEEDIQ_RESEARCHER_EMAIL", "researcher@quantum.org").strip().lower()
     
@@ -207,8 +221,8 @@ def initialize_seediq_accounts():
             )
         else:
             conn.execute(
-                "UPDATE users SET password = ?, role = 'Admin', provider = 'local' WHERE email = ?",
-                (generate_password_hash("admin123"), admin_email)
+                "UPDATE users SET role = 'Admin', provider = 'local' WHERE email = ?",
+                (admin_email,)
             )
             
         # 2. Fixed Researcher Account
@@ -221,8 +235,8 @@ def initialize_seediq_accounts():
             )
         else:
             conn.execute(
-                "UPDATE users SET password = ?, role = 'Researcher', provider = 'local' WHERE email = ?",
-                (generate_password_hash("research123"), researcher_email)
+                "UPDATE users SET role = 'Researcher', provider = 'local' WHERE email = ?",
+                (researcher_email,)
             )
         conn.commit()
 
@@ -741,8 +755,9 @@ def login():
         elif user['email'] and user['email'].lower() == researcher_email:
             role = "Researcher"
         else:
-            role = user['role'] or "Farmer"
+            role = user['role'] if user['role'] in ['Admin', 'Researcher', 'Farmer'] else "Farmer"
             
+        session.clear()
         session['user_id'] = user['id']
         session['username'] = user['username']
         session['email'] = user['email']
@@ -907,6 +922,7 @@ def register_verify_otp():
             conn.commit()
             user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
             
+        session.clear()
         session['user_id'] = user['id']
         session['username'] = user['username']
         session['email'] = user['email']
@@ -1037,11 +1053,12 @@ def forgot_password_verify_otp():
         }), 200
 
 @app.route('/api/forgot-password/reset-password', methods=['POST'])
+@app.route('/api/forgot-password/reset', methods=['POST'])
 def forgot_password_reset_password():
     data = request.get_json() or {}
     email = (data.get('email') or '').strip().lower()
     otp = (data.get('otp') or '').strip()
-    new_password = data.get('new_password') or ''
+    new_password = data.get('new_password') or data.get('newPassword') or data.get('password') or ''
     
     if not email or not otp or not new_password:
         return jsonify({"status": "error", "message": "Email, verification code, and new password are required."}), 400
@@ -1092,7 +1109,8 @@ def forgot_password_reset_password():
 # -------------------------------------------------------------
 @app.route('/api/guest-login', methods=['POST'])
 def guest_login():
-    session['user_id'] = 999999
+    session.clear()
+    session['user_id'] = None
     session['username'] = 'guest_preview'
     session['display_name'] = 'Guest Preview'
     session['role'] = 'Guest'
@@ -1101,7 +1119,7 @@ def guest_login():
     return jsonify({
         "status": "success",
         "user": {
-            "id": 999999,
+            "id": "guest",
             "username": "guest_preview",
             "email": "guest@seediq.local",
             "display_name": "Guest Preview",
@@ -1113,15 +1131,11 @@ def guest_login():
 
 @app.route('/api/me', methods=['GET'])
 def get_current_user():
-    user_id = session.get('user_id')
-    if not user_id:
-        return jsonify({"authenticated": False}), 200
-        
     if session.get('is_guest'):
         return jsonify({
             "authenticated": True,
             "user": {
-                "id": 999999,
+                "id": "guest",
                 "username": "guest_preview",
                 "email": "guest@seediq.local",
                 "display_name": "Guest Preview",
@@ -1130,10 +1144,15 @@ def get_current_user():
                 "provider": "guest"
             }
         }), 200
-    
+
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"authenticated": False}), 200
+        
     with get_db() as conn:
         user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
         if user:
+            role = user['role'] if user['role'] in ['Admin', 'Researcher', 'Farmer'] else "Farmer"
             return jsonify({
                 "authenticated": True,
                 "user": {
@@ -1141,7 +1160,7 @@ def get_current_user():
                     "username": user['username'],
                     "email": user['email'],
                     "display_name": user['display_name'] or user['username'],
-                    "role": user['role'],
+                    "role": role,
                     "provider": user['provider']
                 }
             }), 200
@@ -1150,7 +1169,9 @@ def get_current_user():
 @app.route('/api/logout', methods=['POST'])
 def logout():
     session.clear()
-    return jsonify({"status": "success", "message": "Logged out successfully"}), 200
+    resp = jsonify({"status": "success", "message": "Logged out successfully"})
+    resp.delete_cookie(app.config.get('SESSION_COOKIE_NAME', 'session'))
+    return resp, 200
 
 # Legacy compatibility route if needed
 @app.route('/api/send-otp', methods=['POST'])
@@ -1266,7 +1287,21 @@ def database():
 
 @app.route('/api/dashboard')
 def dashboard():
-    if 'user_id' not in session:
+    if session.get('is_guest'):
+        return jsonify({
+            "username": "Guest Preview",
+            "metrics": get_latest_metrics(),
+            "history": [],
+            "total_runs": 0,
+            "avg_yield": 0.0,
+            "viability_rate": 0.0,
+            "top_crop": "None"
+        }), 200
+        
+    user_id = session.get('user_id')
+    if not user_id:
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({"status": "error", "message": "Unauthorized"}), 401
         return redirect(url_for('login'))
         
     metrics = get_latest_metrics()
@@ -1379,7 +1414,7 @@ def upload_dataset():
 
 @app.route('/api/crop-recommendation', methods=['GET', 'POST'])
 def crop_recommendation():
-    user_id = session.get('user_id') or 1
+    user_id = session.get('user_id') if not session.get('is_guest') else None
         
     result = None
     soil_analysis = None
@@ -1556,7 +1591,7 @@ def crop_recommendation():
 
 @app.route('/api/yield-prediction', methods=['GET', 'POST'])
 def yield_prediction():
-    user_id = session.get('user_id') or 1
+    user_id = session.get('user_id') if not session.get('is_guest') else None
         
     result = None
     market_analysis = None
@@ -1676,7 +1711,7 @@ def yield_prediction():
 
 @app.route('/api/seed-viability', methods=['GET', 'POST'])
 def seed_viability():
-    user_id = session.get('user_id') or 1
+    user_id = session.get('user_id') if not session.get('is_guest') else None
         
     result = None
     if request.method == 'POST':
@@ -1739,7 +1774,7 @@ def seed_viability():
 
 @app.route('/api/storage-recommendation', methods=['GET', 'POST'])
 def storage_recommendation():
-    user_id = session.get('user_id') or 1
+    user_id = session.get('user_id') if not session.get('is_guest') else None
         
     result = None
     crop = None
@@ -1778,7 +1813,7 @@ def storage_recommendation():
 
 @app.route('/api/quantum-ml', methods=['GET', 'POST'])
 def quantum_ml():
-    user_id = session.get('user_id') or 1
+    user_id = session.get('user_id') if not session.get('is_guest') else None
         
     result = None
     inputs = {}
@@ -1929,6 +1964,8 @@ def quantum_ml():
 @app.route('/admin')
 def admin_console():
     if 'user_id' not in session or not session.get('role') or session.get('role').lower() != 'admin':
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({"status": "error", "message": "Access Denied: Administrative console restricted to system administrators."}), 403
         flash("Access Denied: Administrative console restricted to system administrators.", "error")
         return redirect(url_for('dashboard'))
         
@@ -1942,6 +1979,7 @@ def admin_console():
     
     # Load recent activity log
     activity_logs = []
+    users_list = []
     try:
         with get_db() as conn:
             stats['total_users'] = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
@@ -1958,7 +1996,12 @@ def admin_console():
         print(f"Error loading admin statistics: {e}")
         users_list = []
         
-    return render_template('admin.html', stats=stats, users=users_list, logs=activity_logs)
+    if request.is_json or request.headers.get('Accept') == 'application/json':
+        return jsonify({"stats": stats, "users": users_list, "logs": activity_logs}), 200
+    try:
+        return render_template('admin.html', stats=stats, users=users_list, logs=activity_logs)
+    except Exception:
+        return jsonify({"stats": stats, "users": users_list, "logs": activity_logs}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

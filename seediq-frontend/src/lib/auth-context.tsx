@@ -106,6 +106,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               isGuest: isGuestRole,
               provider: data.user.provider || "local",
             });
+          } else {
+            setUser(null);
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(GUEST_EXPIRY_KEY);
           }
         }
       } catch {

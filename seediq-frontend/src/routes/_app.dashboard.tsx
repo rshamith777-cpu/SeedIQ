@@ -109,7 +109,7 @@ function Dashboard() {
       .catch((err) => console.error("Failed to load dashboard data", err));
 
     detectAndFetchLocation();
-  }, [detectAndFetchLocation]);
+  }, [detectAndFetchLocation, user?.id]);
 
   const condition = getWmoCondition(localWeather?.current?.weather_code);
   const ConditionIcon = condition.icon;
