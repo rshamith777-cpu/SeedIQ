@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@/lib/auth-context";
 import {
   Sprout, Leaf, Cpu, TrendingUp, ShieldCheck, Layers, ChevronDown,
   ArrowRight, ShieldAlert, Sparkles, MapPin, Droplets, Wind,
@@ -164,6 +165,8 @@ function DynamicAtmosphere() {
 /* Main SeedIQ Homepage Component                                             */
 /* -------------------------------------------------------------------------- */
 function SeedIQHomepage() {
+  const { user, logout } = useAuth();
+  const targetRoute = user ? "/dashboard" : "/login";
   const [showIntroVideo, setShowIntroVideo] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedDistrictId, setSelectedDistrictId] = useState<string>("Mandya");
@@ -300,7 +303,7 @@ function SeedIQHomepage() {
         {/* Center Desktop Navigation */}
         <div className="hidden md:flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1.5 backdrop-blur-md">
           <Link
-            to="/dashboard"
+            to={targetRoute}
             className="px-4 py-1.5 rounded-full text-xs font-semibold text-white/80 hover:text-white hover:bg-white/10 transition-colors"
           >
             Dashboard
@@ -348,19 +351,40 @@ function SeedIQHomepage() {
             <span className="text-[11px] font-mono">Intro</span>
           </button>
 
-          <Link
-            to="/login"
-            className="px-4 py-2 text-xs font-semibold text-white/80 hover:text-white transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            to="/dashboard"
-            className="group relative flex items-center gap-2 rounded-full border border-emerald-400/40 bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 text-xs font-bold text-black shadow-[0_0_25px_rgba(16,185,129,0.35)] hover:shadow-[0_0_35px_rgba(16,185,129,0.5)] transition-all"
-          >
-            <span>Get Started</span>
-            <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-2.5">
+              <Link
+                to="/dashboard"
+                className="group relative flex items-center gap-2 rounded-full border border-emerald-400/40 bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 text-xs font-bold text-black shadow-[0_0_25px_rgba(16,185,129,0.35)] hover:shadow-[0_0_35px_rgba(16,185,129,0.5)] transition-all"
+              >
+                <span>Dashboard</span>
+                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <button
+                onClick={() => logout()}
+                className="px-3.5 py-2 rounded-full border border-white/10 bg-white/5 hover:bg-rose-950/40 hover:border-rose-500/40 text-xs text-white/70 hover:text-rose-300 transition-all cursor-pointer"
+                title="Sign out of SeedIQ"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="px-4 py-2 text-xs font-semibold text-white/80 hover:text-white transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/login"
+                className="group relative flex items-center gap-2 rounded-full border border-emerald-400/40 bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 text-xs font-bold text-black shadow-[0_0_25px_rgba(16,185,129,0.35)] hover:shadow-[0_0_35px_rgba(16,185,129,0.5)] transition-all"
+              >
+                <span>Get Started</span>
+                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -383,8 +407,8 @@ function SeedIQHomepage() {
             className="fixed inset-x-0 top-[73px] z-30 bg-black/95 border-b border-white/10 p-6 backdrop-blur-2xl md:hidden space-y-4"
           >
             <div className="flex flex-col space-y-3 text-sm font-medium">
-              <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="py-2 text-white/90">
-                Dashboard
+              <Link to={targetRoute} onClick={() => setMobileMenuOpen(false)} className="py-2 text-white/90">
+                {user ? "Dashboard" : "Sign In to Dashboard"}
               </Link>
               <button onClick={() => scrollToSection("intelligence-section")} className="py-2 text-left text-white/90">
                 AI Intelligence
@@ -393,7 +417,7 @@ function SeedIQHomepage() {
                 Quantum ML
               </button>
               <button onClick={() => scrollToSection("karnataka-map-section")} className="py-2 text-left text-white/90">
-                Karnataka Map
+                Karnataka
               </button>
               <button onClick={() => scrollToSection("early-warning-section")} className="py-2 text-left text-white/90">
                 Early Warnings
@@ -403,18 +427,43 @@ function SeedIQHomepage() {
               </button>
             </div>
             <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
-              <Link
-                to="/login"
-                className="w-full text-center py-2.5 rounded-xl border border-white/10 text-xs font-semibold"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/dashboard"
-                className="w-full text-center py-2.5 rounded-xl bg-emerald-500 text-black text-xs font-bold shadow-lg"
-              >
-                Get Started
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 rounded-xl bg-emerald-500 text-black text-xs font-bold shadow-lg"
+                  >
+                    Go to Dashboard
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full text-center py-2 rounded-xl border border-white/10 text-xs text-rose-300 font-semibold"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 rounded-xl border border-white/10 text-xs font-semibold"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 rounded-xl bg-emerald-500 text-black text-xs font-bold shadow-lg"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}
@@ -456,10 +505,10 @@ function SeedIQHomepage() {
           {/* CTA Buttons */}
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link
-              to="/dashboard"
+              to={targetRoute}
               className="group relative flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black px-8 py-4 font-display text-sm font-bold shadow-[0_0_35px_rgba(16,185,129,0.35)] hover:shadow-[0_0_50px_rgba(16,185,129,0.55)] transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span>EXPLORE SEEDIQ</span>
+              <span>{user ? "EXPLORE SEEDIQ" : "GET STARTED"}</span>
               <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Link>
 
@@ -584,10 +633,10 @@ function SeedIQHomepage() {
             </div>
 
             <Link
-              to="/crop-ai"
+              to={user ? "/crop-ai" : "/login"}
               className="mt-6 flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-emerald-500/15 hover:border-emerald-500/40 text-xs font-semibold text-white transition-all group-hover:text-emerald-300"
             >
-              <span>Explore Crop AI Model</span>
+              <span>{user ? "Explore Crop AI Model" : "Sign In to Access Crop AI"}</span>
               <ArrowRight className="h-4 w-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -637,10 +686,10 @@ function SeedIQHomepage() {
             </div>
 
             <Link
-              to="/yield-ai"
+              to={user ? "/yield-ai" : "/login"}
               className="mt-6 flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-sky-500/15 hover:border-sky-500/40 text-xs font-semibold text-white transition-all group-hover:text-sky-300"
             >
-              <span>Explore Yield AI Model</span>
+              <span>{user ? "Explore Yield AI Model" : "Sign In to Access Yield AI"}</span>
               <ArrowRight className="h-4 w-4 text-sky-400 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -690,10 +739,10 @@ function SeedIQHomepage() {
             </div>
 
             <Link
-              to="/seed-ai"
+              to={user ? "/seed-ai" : "/login"}
               className="mt-6 flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-emerald-500/15 hover:border-emerald-500/40 text-xs font-semibold text-white transition-all group-hover:text-emerald-300"
             >
-              <span>Explore Seed AI Engine</span>
+              <span>{user ? "Explore Seed AI Engine" : "Sign In to Access Seed AI"}</span>
               <ArrowRight className="h-4 w-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -1065,10 +1114,10 @@ function SeedIQHomepage() {
             </div>
 
             <Link
-              to="/dashboard"
+              to={targetRoute}
               className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-display font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg"
             >
-              <span>Open Full District Intelligence Suite</span>
+              <span>{user ? "Open Full District Intelligence Suite" : "Sign In to Access District Suite"}</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
 
@@ -1250,18 +1299,18 @@ function SeedIQHomepage() {
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link
-              to="/dashboard"
+              to={targetRoute}
               className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black px-8 py-4 font-display text-sm font-bold shadow-[0_0_35px_rgba(16,185,129,0.35)] transition-all hover:scale-[1.02]"
             >
-              <span>EXPLORE SEEDIQ</span>
+              <span>{user ? "OPEN DASHBOARD" : "EXPLORE SEEDIQ"}</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
 
             <Link
-              to="/register"
+              to={user ? "/dashboard" : "/login"}
               className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-white px-8 py-4 font-display text-sm font-semibold backdrop-blur-md transition-all"
             >
-              <span>GET STARTED</span>
+              <span>{user ? "WORKSPACE" : "GET STARTED"}</span>
             </Link>
           </div>
 
@@ -1282,12 +1331,12 @@ function SeedIQHomepage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-6 font-mono text-[11px]">
-            <Link to="/dashboard" className="hover:text-emerald-400 transition-colors">Dashboard</Link>
-            <Link to="/crop-ai" className="hover:text-emerald-400 transition-colors">Crop AI</Link>
-            <Link to="/yield-ai" className="hover:text-emerald-400 transition-colors">Yield AI</Link>
-            <Link to="/seed-ai" className="hover:text-emerald-400 transition-colors">Seed AI</Link>
-            <Link to="/storage-ai" className="hover:text-emerald-400 transition-colors">Storage AI</Link>
-            <Link to="/quantum" className="hover:text-emerald-400 transition-colors">Quantum QML</Link>
+            <Link to={targetRoute} className="hover:text-emerald-400 transition-colors">Dashboard</Link>
+            <Link to={user ? "/crop-ai" : "/login"} className="hover:text-emerald-400 transition-colors">Crop AI</Link>
+            <Link to={user ? "/yield-ai" : "/login"} className="hover:text-emerald-400 transition-colors">Yield AI</Link>
+            <Link to={user ? "/seed-ai" : "/login"} className="hover:text-emerald-400 transition-colors">Seed AI</Link>
+            <Link to={user ? "/storage-ai" : "/login"} className="hover:text-emerald-400 transition-colors">Storage AI</Link>
+            <Link to={user ? "/quantum" : "/login"} className="hover:text-emerald-400 transition-colors">Quantum QML</Link>
           </div>
 
           <div className="text-[11px] font-mono text-white/50">

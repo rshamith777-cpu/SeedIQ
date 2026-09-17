@@ -15,3 +15,6 @@ Flask-PyMongo
 gunicorn
 flask-cors
 python-dotenv
+requests
+joblib
+

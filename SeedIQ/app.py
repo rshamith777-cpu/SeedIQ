@@ -53,8 +53,12 @@ except Exception as _e:
     pass
 
 import qml_model
+from supabase_client import supabase
+from activity_logger import log_activity
+from dataset_service import process_and_store_dataset
 
 app = Flask(__name__)
+
 CORS(app)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "seediq_super_secret_key_quantum_default_fallback_2026")
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limit to 16MB
@@ -189,21 +193,37 @@ def init_db():
         conn.commit()
 
 def log_prediction(user_id, prediction_type, inputs, results):
-    """Safely logs predictions to the database for user telemetry."""
-    if not user_id or user_id == 999999 or session.get('is_guest'):
+    """Safely logs predictions to Supabase and SQLite for user telemetry."""
+    if not user_id or user_id == 999999 or user_id == 'guest' or session.get('is_guest'):
         return
+
+    # 1. Dual-write to Supabase predictions table
     try:
-        with get_db() as conn:
-            user_exists = conn.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
-            if not user_exists:
-                return
-            conn.execute('''
-                INSERT INTO predictions (user_id, prediction_type, inputs, results)
-                VALUES (?, ?, ?, ?)
-            ''', (user_id, prediction_type, json.dumps(inputs), json.dumps(results)))
-            conn.commit()
+        supabase_uid = session.get('supabase_user_id') or (user_id if isinstance(user_id, str) and len(user_id) == 36 and '-' in user_id else None)
+        token = session.get('access_token')
+        supabase.insert_row("predictions", {
+            "user_id": supabase_uid,
+            "prediction_type": prediction_type,
+            "inputs": inputs,
+            "results": results
+        }, token=token)
+        log_activity("PREDICTION_CREATED", user_id=supabase_uid or str(user_id), details={"prediction_type": prediction_type})
     except Exception as e:
-        print(f"Failed to log prediction to db: {e}")
+        print(f"[PREDICTION_LOG] Supabase persistence notice: {e}")
+
+    # 2. Dual-write to SQLite fallback
+    try:
+        sqlite_uid = session.get('sqlite_user_id') or (user_id if isinstance(user_id, int) else None)
+        if sqlite_uid:
+            with get_db() as conn:
+                conn.execute('''
+                    INSERT INTO predictions (user_id, prediction_type, inputs, results)
+                    VALUES (?, ?, ?, ?)
+                ''', (sqlite_uid, prediction_type, json.dumps(inputs), json.dumps(results)))
+                conn.commit()
+    except Exception as e:
+        print(f"Failed to log prediction to SQLite: {e}")
+
 
 def initialize_seediq_accounts():
     """Initializes fixed Admin and Researcher accounts from environment variables without overwriting existing passwords."""
@@ -736,7 +756,72 @@ def login():
     
     if not email_or_user or not password:
         return jsonify({"status": "error", "message": "Email and password are required."}), 400
+
+    admin_email = os.environ.get("SEEDIQ_ADMIN_EMAIL", "admin@seediq.ai").strip().lower()
+    researcher_email = os.environ.get("SEEDIQ_RESEARCHER_EMAIL", "researcher@quantum.org").strip().lower()
+
+    # 1. Attempt Supabase Auth Authentication
+    sb_success, sb_res = supabase.sign_in(email_or_user, password)
+    if sb_success and "user" in sb_res:
+        sb_user = sb_res["user"]
+        sb_uid = sb_user.get("id")
+        user_email = (sb_user.get("email") or email_or_user).lower()
+        display_name = sb_user.get("user_metadata", {}).get("display_name") or user_email.split("@")[0]
         
+        # Server-side role resolution hierarchy
+        if user_email == admin_email:
+            role = "Admin"
+        elif user_email == researcher_email:
+            role = "Researcher"
+        else:
+            role = sb_user.get("user_metadata", {}).get("role") or (sb_res.get("profile") or {}).get("role", "Farmer")
+            if role not in ['Admin', 'Researcher', 'Farmer']:
+                role = "Farmer"
+
+        session.clear()
+        session['user_id'] = sb_uid
+        session['supabase_user_id'] = sb_uid
+        session['username'] = user_email.split('@')[0]
+        session['email'] = user_email
+        session['role'] = role
+        session['display_name'] = display_name
+        session['access_token'] = sb_res.get("access_token")
+        session['is_guest'] = False
+
+        # Ensure SQLite has a local mirror for legacy query joins
+        try:
+            with get_db() as conn:
+                local_u = conn.execute('SELECT id FROM users WHERE email = ?', (user_email,)).fetchone()
+                if local_u:
+                    session['sqlite_user_id'] = local_u['id']
+                else:
+                    conn.execute(
+                        'INSERT INTO users (username, password, email, display_name, role, provider) VALUES (?, ?, ?, ?, ?, "supabase")',
+                        (user_email.split('@')[0], generate_password_hash(password), user_email, display_name, role)
+                    )
+                    conn.commit()
+                    new_local = conn.execute('SELECT id FROM users WHERE email = ?', (user_email,)).fetchone()
+                    if new_local:
+                        session['sqlite_user_id'] = new_local['id']
+        except Exception as e:
+            print(f"[LOGIN] SQLite sync notice: {e}")
+
+        log_activity("USER_LOGIN", user_id=sb_uid, details={"email": user_email, "provider": "supabase_auth"})
+
+        return jsonify({
+            "status": "success",
+            "message": "Signed in successfully.",
+            "user": {
+                "id": sb_uid,
+                "username": user_email.split('@')[0],
+                "email": user_email,
+                "display_name": display_name,
+                "role": role,
+                "provider": "supabase_auth"
+            }
+        }), 200
+
+    # 2. Fallback to local SQLite authentication
     with get_db() as conn:
         user = conn.execute(
             'SELECT * FROM users WHERE email = ? OR username = ?', 
@@ -744,11 +829,9 @@ def login():
         ).fetchone()
         
         if not user or not check_password_hash(user['password'], password):
+            log_activity("LOGIN_FAILED", user_id=None, details={"identifier": email_or_user}, status="FAILED")
             return jsonify({"status": "error", "message": "Invalid email or password."}), 401
             
-        admin_email = os.environ.get("SEEDIQ_ADMIN_EMAIL", "admin@seediq.ai").strip().lower()
-        researcher_email = os.environ.get("SEEDIQ_RESEARCHER_EMAIL", "researcher@quantum.org").strip().lower()
-        
         # Server-side role resolution hierarchy
         if user['email'] and user['email'].lower() == admin_email:
             role = "Admin"
@@ -759,12 +842,15 @@ def login():
             
         session.clear()
         session['user_id'] = user['id']
+        session['sqlite_user_id'] = user['id']
         session['username'] = user['username']
         session['email'] = user['email']
         session['role'] = role
         session['display_name'] = user['display_name'] or user['username']
         session['is_guest'] = False
-        
+
+        log_activity("USER_LOGIN", user_id=str(user['id']), details={"email": user['email'], "provider": "local_sqlite"})
+
         return jsonify({
             "status": "success",
             "message": "Signed in successfully.",
@@ -778,9 +864,16 @@ def login():
             }
         }), 200
 
+
 # -------------------------------------------------------------
 # 2. Registration Flow (Request OTP -> Verify OTP & Create Account)
 # -------------------------------------------------------------
+def _get_app_cipher():
+    import base64, hashlib
+    from cryptography.fernet import Fernet
+    key = base64.urlsafe_b64encode(hashlib.sha256(app.secret_key.encode()).digest())
+    return Fernet(key)
+
 @app.route('/api/register/request-otp', methods=['POST'])
 def register_request_otp():
     data = request.get_json() or {}
@@ -800,7 +893,7 @@ def register_request_otp():
     now = datetime.datetime.now()
     
     with get_db() as conn:
-        # Check if email is already registered
+        # Check if email is already registered locally
         existing = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
         if existing:
             return jsonify({"status": "error", "success": False, "email_sent": False, "message": "An account with this email address already exists. Please sign in."}), 409
@@ -827,15 +920,20 @@ def register_request_otp():
         otp = f"{secrets.randbelow(900000) + 100000}"
         expires_at = (now + datetime.timedelta(minutes=10)).strftime('%Y-%m-%d %H:%M:%S')
         now_str = now.strftime('%Y-%m-%d %H:%M:%S')
-        pw_hash = generate_password_hash(password)
+        
+        # Encrypt password temporarily in otp_codes table
+        cipher = _get_app_cipher()
+        enc_pw = cipher.encrypt(password.encode()).decode()
         
         conn.execute('DELETE FROM otp_codes WHERE email = ? AND purpose = "registration"', (email,))
         conn.execute(
             'INSERT INTO otp_codes (email, otp, purpose, name, password_hash, attempts, created_at, expires_at) VALUES (?, ?, "registration", ?, ?, 0, ?, ?)',
-            (email, otp, name, pw_hash, now_str, expires_at)
+            (email, otp, name, enc_pw, now_str, expires_at)
         )
         conn.commit()
         
+    log_activity("OTP_SENT", user_id=None, details={"email": email, "purpose": "registration"})
+
     # Attempt real email dispatch via SMTP / Resend API
     email_success, email_status_msg = send_real_email_otp(email, otp, purpose="registration")
     
@@ -899,49 +997,73 @@ def register_verify_otp():
             return jsonify({"status": "error", "message": "Verification code has expired. Please request a new code."}), 400
             
         name = record['name'] or email.split('@')[0]
-        pw_hash = record['password_hash']
+        enc_pw = record['password_hash']
         username = email.split('@')[0]
         
         # Burn registration OTP immediately
         conn.execute('DELETE FROM otp_codes WHERE email = ? AND purpose = "registration"', (email,))
-        
-        # Insert user account with Farmer role strictly
+        conn.commit()
+
+        # Decrypt password
+        raw_pw = ""
+        try:
+            cipher = _get_app_cipher()
+            raw_pw = cipher.decrypt(enc_pw.encode()).decode()
+        except Exception as e:
+            print(f"[OTP_VERIFY] Password decryption note: {e}")
+
+        # 1. Register in Supabase Auth
+        sb_uid = None
+        if raw_pw:
+            ok, sb_res = supabase.sign_up(email=email, password=raw_pw, display_name=name, role="Farmer")
+            if ok and sb_res:
+                sb_uid = sb_res.get("id") or (sb_res.get("user") or {}).get("id")
+
+        # 2. Local SQLite record for fallback
+        local_hash = generate_password_hash(raw_pw) if raw_pw else enc_pw
         try:
             conn.execute(
-                'INSERT INTO users (username, password, email, display_name, role, provider) VALUES (?, ?, ?, ?, "Farmer", "local")',
-                (username, pw_hash, email, name)
+                'INSERT INTO users (username, password, email, display_name, role, provider) VALUES (?, ?, ?, ?, "Farmer", ?)',
+                (username, local_hash, email, name, "supabase_auth" if sb_uid else "local")
             )
             conn.commit()
             user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
         except sqlite3.IntegrityError:
             unique_u = f"{username}_{secrets.randbelow(900) + 100}"
             conn.execute(
-                'INSERT INTO users (username, password, email, display_name, role, provider) VALUES (?, ?, ?, ?, "Farmer", "local")',
-                (unique_u, pw_hash, email, name)
+                'INSERT INTO users (username, password, email, display_name, role, provider) VALUES (?, ?, ?, ?, "Farmer", ?)',
+                (unique_u, local_hash, email, name, "supabase_auth" if sb_uid else "local")
             )
             conn.commit()
             user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
             
+        target_uid = sb_uid or user['id']
         session.clear()
-        session['user_id'] = user['id']
+        session['user_id'] = target_uid
+        session['supabase_user_id'] = sb_uid
+        session['sqlite_user_id'] = user['id']
         session['username'] = user['username']
         session['email'] = user['email']
         session['role'] = "Farmer"
         session['display_name'] = user['display_name'] or user['username']
         session['is_guest'] = False
+
+        log_activity("USER_REGISTERED", user_id=str(target_uid), details={"email": email, "role": "Farmer"})
+        log_activity("OTP_VERIFIED", user_id=str(target_uid), details={"email": email, "purpose": "registration"})
         
         return jsonify({
             "status": "success",
             "message": "Account created successfully.",
             "user": {
-                "id": user['id'],
+                "id": target_uid,
                 "username": user['username'],
                 "email": user['email'],
                 "display_name": user['display_name'],
                 "role": "Farmer",
-                "provider": "local"
+                "provider": "supabase_auth" if sb_uid else "local"
             }
         }), 201
+
 
 # -------------------------------------------------------------
 # 3. Forgot Password Flow (Request OTP -> Verify OTP -> Reset Password)
@@ -1085,7 +1207,7 @@ def forgot_password_reset_password():
         # Invalidate OTP code
         conn.execute('DELETE FROM otp_codes WHERE email = ?', (email,))
         
-        # Update user password securely
+        # Update user password securely in SQLite
         new_hash = generate_password_hash(new_password)
         try:
             conn.execute(
@@ -1098,11 +1220,20 @@ def forgot_password_reset_password():
                 (new_hash, email)
             )
         conn.commit()
+
+        # Update Supabase password if session token exists
+        token = session.get('access_token')
+        if token:
+            supabase.update_password(token, new_password)
+        
+        user_id = session.get('user_id') or email
+        log_activity("PASSWORD_CHANGED", user_id=str(user_id), details={"email": email})
         
     return jsonify({
         "status": "success",
         "message": "Your password has been updated successfully. Please sign in."
     }), 200
+
 
 # -------------------------------------------------------------
 # 4. Guest Mode & Session Routes
@@ -1168,10 +1299,14 @@ def get_current_user():
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
+    uid = session.get('user_id')
+    if uid:
+        log_activity("USER_LOGOUT", user_id=str(uid))
     session.clear()
     resp = jsonify({"status": "success", "message": "Logged out successfully"})
     resp.delete_cookie(app.config.get('SESSION_COOKIE_NAME', 'session'))
     return resp, 200
+
 
 # Legacy compatibility route if needed
 @app.route('/api/send-otp', methods=['POST'])
@@ -1367,6 +1502,58 @@ def dashboard():
         "top_crop": top_crop
     })
 
+@app.route('/api/datasets', methods=['GET'])
+def get_datasets():
+    """
+    Returns catalogue of uploaded and versioned datasets for the database console (_app.database.tsx).
+    """
+    datasets_list = []
+    
+    # 1. Try to query Supabase datasets & dataset_versions
+    try:
+        ok, rows = supabase.select_rows("dataset_versions", "select=*&order=created_at.desc")
+        if ok and rows:
+            for r in rows:
+                datasets_list.append({
+                    "id": f"DS-{r.get('id', 1000):04d}" if isinstance(r.get('id'), int) else str(r.get('id')),
+                    "name": r.get('stored_path', '').split('/')[-1] or f"{r.get('dataset_name')}_{r.get('version')}.csv",
+                    "rows": f"{r.get('row_count', 0):,}",
+                    "size": "Processed",
+                    "date": str(r.get('created_at', ''))[:10] if r.get('created_at') else "Recently",
+                    "status": "Ready for Training",
+                    "type": r.get('dataset_name', 'Custom Dataset')
+                })
+    except Exception as e:
+        print(f"[API_DATASETS] Supabase fetch notice: {e}")
+
+    # 2. Fallback to local SQLite dataset_versions
+    if not datasets_list:
+        try:
+            with get_db() as conn:
+                rows = conn.execute("SELECT * FROM dataset_versions ORDER BY created_at DESC").fetchall()
+                for r in rows:
+                    datasets_list.append({
+                        "id": f"DS-{r['id']:04d}",
+                        "name": f"{r['dataset_name']}_{r['version']}.csv",
+                        "rows": f"{r['row_count']:,}",
+                        "size": "Processed",
+                        "date": str(r['created_at'])[:10] if r['created_at'] else "Recently",
+                        "status": "Ready for Training",
+                        "type": r['dataset_name']
+                    })
+        except Exception:
+            pass
+
+    # 3. Add core baseline datasets if empty
+    if not datasets_list:
+        datasets_list = [
+            {"id": "DS-0001", "name": "merged_ml_dataset.csv", "rows": "2,200", "size": "150 KB", "date": "Standard", "status": "Active", "type": "Crop Recommendation"},
+            {"id": "DS-0002", "name": "crop_production_karnataka.csv", "rows": "10,500", "size": "280 KB", "date": "Standard", "status": "Active", "type": "Yield Prediction"},
+            {"id": "DS-0003", "name": "seed_viability_data.csv", "rows": "1,000", "size": "10 KB", "date": "Standard", "status": "Active", "type": "Seed Viability"}
+        ]
+
+    return jsonify(datasets_list), 200
+
 @app.route('/api/datasets/upload', methods=['GET', 'POST'])
 def upload_dataset():
     if 'user_id' not in session or session.get('role') not in ['Admin', 'Researcher']:
@@ -1378,49 +1565,41 @@ def upload_dataset():
         file = request.files['file']
         if file.filename == '':
             return jsonify({"status": "error", "message": "No selected file."}), 400
-        if file and file.filename.endswith('.csv'):
-            filename = secure_filename(file.filename)
-            upload_dir = app.config.get('UPLOAD_FOLDER', 'data')
-            if not os.path.isabs(upload_dir):
-                upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), upload_dir)
-            os.makedirs(upload_dir, exist_ok=True)
-            save_path = os.path.join(upload_dir, filename)
-            file.save(save_path)
-            
-            # Auto-route check
-            detected_type = "General CSV"
-            routed_to = filename
-            try:
-                df = pd.read_csv(save_path, nrows=5)
-                from data_preprocessing import detect_dataset_type
-                dtype = detect_dataset_type(df)
-                
-                if dtype == 'crop':
-                    routed_to = 'merged_ml_dataset.csv'
-                    os.replace(save_path, os.path.join(upload_dir, routed_to))
-                    detected_type = "Crop Recommendation"
-                elif dtype == 'yield':
-                    routed_to = 'crop_production_karnataka.csv'
-                    os.replace(save_path, os.path.join(upload_dir, routed_to))
-                    detected_type = "Yield Prediction"
-                elif dtype == 'seed':
-                    routed_to = 'seed_viability_data.csv'
-                    os.replace(save_path, os.path.join(upload_dir, routed_to))
-                    detected_type = "Seed Viability"
-            except Exception as e:
-                print(f"Error auto-classifying dataset: {e}")
-                
-            return jsonify({
-                "status": "success",
-                "message": f"Dataset uploaded successfully ({detected_type}).",
-                "filename": filename,
-                "routed_to": routed_to,
-                "detected_type": detected_type
-            }), 200
-            
-        return jsonify({"status": "error", "message": "Invalid file format. Only CSV files are supported."}), 400
+        if not file.filename.lower().endswith('.csv'):
+            return jsonify({"status": "error", "message": "Invalid file format. Only CSV files are supported."}), 400
+
+        filename = secure_filename(file.filename)
+        file_bytes = file.read()
+
+        user_id = session.get('supabase_user_id') or str(session.get('user_id'))
+        user_role = session.get('role', 'Admin')
+        auth_token = session.get('access_token')
+
+        res = process_and_store_dataset(
+            file_bytes=file_bytes,
+            filename=filename,
+            user_id=user_id,
+            user_role=user_role,
+            auth_token=auth_token
+        )
+
+        if res.get("status") == "error":
+            return jsonify(res), 400
+
+        return jsonify({
+            "status": "success",
+            "message": res.get("message", "Dataset uploaded and processed successfully."),
+            "filename": filename,
+            "detected_type": res.get("detected_type"),
+            "version": res.get("version"),
+            "rows": res.get("rows"),
+            "columns": res.get("columns"),
+            "original_storage_path": res.get("original_storage_path"),
+            "processed_storage_path": res.get("processed_storage_path")
+        }), 200
             
     return jsonify({"status": "success", "message": "Upload endpoint ready"}), 200
+
 
 @app.route('/api/crop-recommendation', methods=['GET', 'POST'])
 def crop_recommendation():
@@ -2013,5 +2192,18 @@ def admin_console():
     except Exception:
         return jsonify({"stats": stats, "users": users_list, "logs": activity_logs}), 200
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Production health check probe for Render/Railway orchestration."""
+    return jsonify({
+        "status": "healthy",
+        "service": "SeedIQ Backend Engine",
+        "version": "4.2",
+        "timestamp": datetime.now().isoformat()
+    }), 200
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    host = os.environ.get('HOST', '0.0.0.0')
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1')
+    app.run(host=host, port=port, debug=debug, use_reloader=False)

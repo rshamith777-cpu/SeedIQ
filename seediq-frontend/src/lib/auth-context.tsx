@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { AuthTransitionOverlay, AuthTransitionState, AuthTransitionType } from "@/components/seediq/auth-transition-overlay";
+import { supabase } from "@/lib/supabase";
 
 export type UserRole = "Admin" | "Researcher" | "Farmer" | "Guest";
 
@@ -68,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  // Sync session on mount with /api/me
+  // Sync session on mount with /api/me and Supabase
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -106,14 +107,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               isGuest: isGuestRole,
               provider: data.user.provider || "local",
             });
-          } else {
-            setUser(null);
-            localStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(GUEST_EXPIRY_KEY);
+            return;
           }
         }
       } catch {
-        // Fallback to localStorage state
+        // Backend /api/me unreachable (e.g. running on cloud host like Vercel)
+      }
+
+      // Check if there is an active Supabase cloud session token
+      const supaToken = localStorage.getItem("seediq_supabase_token");
+      if (supaToken) {
+        try {
+          const supaUser = await supabase.auth.getUser(supaToken);
+          if (supaUser && supaUser.id) {
+            setUser({
+              id: supaUser.id,
+              username: supaUser.user_metadata?.username || supaUser.email?.split("@")[0] || "user",
+              email: supaUser.email || "",
+              name: supaUser.user_metadata?.display_name || supaUser.user_metadata?.name || supaUser.email?.split("@")[0] || "User",
+              display_name: supaUser.user_metadata?.display_name || supaUser.email?.split("@")[0],
+              role: (supaUser.user_metadata?.role as UserRole) || "Farmer",
+              isGuest: false,
+              provider: "supabase",
+            });
+            return;
+          }
+        } catch {
+          // Supabase token invalid or expired
+        }
+      }
+
+      // If guest session in localStorage, check expiry
+      const savedUserStr = localStorage.getItem(STORAGE_KEY);
+      if (savedUserStr) {
+        try {
+          const savedUser = JSON.parse(savedUserStr);
+          if (savedUser?.isGuest) {
+            const savedExpiry = localStorage.getItem(GUEST_EXPIRY_KEY);
+            if (savedExpiry) {
+              const remaining = Math.floor((parseInt(savedExpiry, 10) - Date.now()) / 1000);
+              if (remaining <= 0) {
+                logout();
+              }
+            }
+          }
+        } catch {}
       }
     };
     checkSession();
@@ -193,43 +231,91 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthTransition({ type: null, message: "" });
   }, []);
 
-  // 1. Sign In with Email + Password
+  // 1. Sign In with Email + Password (Hybrid Flask + Supabase Cloud Auth)
   const signIn = async (
     email: string,
     password: string
   ): Promise<{ success: boolean; user?: User; error?: string }> => {
     setIsLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // First attempt: Backend Flask API (with Supabase sync)
     try {
       const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: email.trim().toLowerCase(),
+          email: normalizedEmail,
           password: password,
         }),
       });
-      const data = await res.json();
 
-      if (!res.ok || data.status === "error") {
-        return { success: false, error: data.message || "Invalid email or password." };
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === "success" && data.user) {
+          const backendUser = data.user;
+          const authenticatedUser: User = {
+            id: backendUser.id,
+            username: backendUser.username,
+            email: backendUser.email,
+            name: backendUser.display_name || backendUser.username,
+            display_name: backendUser.display_name || backendUser.username,
+            role: backendUser.role,
+            isGuest: backendUser.role === "Guest",
+            provider: "local",
+          };
+
+          setUser(authenticatedUser);
+          await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+          return { success: true, user: authenticatedUser };
+        } else if (data.status === "error") {
+          // If the backend explicitly reported invalid credentials, return error
+          return { success: false, error: data.message || "Invalid email or password." };
+        }
+      }
+    } catch {
+      // Backend /api/login was unreachable (e.g. hosted on Vercel) -> Fallback directly to Supabase
+    }
+
+    // Direct Supabase GoTrue Auth Fallback (production cloud authentication)
+    try {
+      const { data: supaData, error: supaError } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
+
+      if (supaError) {
+        return { success: false, error: supaError.message || "Invalid email or password." };
       }
 
-      const backendUser = data.user;
-      const authenticatedUser: User = {
-        id: backendUser.id,
-        username: backendUser.username,
-        email: backendUser.email,
-        name: backendUser.display_name || backendUser.username,
-        display_name: backendUser.display_name || backendUser.username,
-        role: backendUser.role,
-        isGuest: backendUser.role === "Guest",
-        provider: "local",
-      };
+      if (supaData && (supaData.user || supaData.access_token)) {
+        const supaUser = supaData.user || (supaData.access_token ? await supabase.auth.getUser(supaData.access_token) : null);
+        const token = supaData.access_token || supaData.session?.access_token;
+        if (token) {
+          localStorage.setItem("seediq_supabase_token", token);
+        }
 
-      setUser(authenticatedUser);
-      // Trigger smooth login animation
-      await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
-      return { success: true, user: authenticatedUser };
+        const username = supaUser?.user_metadata?.username || normalizedEmail.split("@")[0];
+        const displayName = supaUser?.user_metadata?.display_name || supaUser?.user_metadata?.name || username;
+        const role = (supaUser?.user_metadata?.role as UserRole) || "Farmer";
+
+        const authenticatedUser: User = {
+          id: supaUser?.id || `supa_${Date.now()}`,
+          username: username,
+          email: supaUser?.email || normalizedEmail,
+          name: displayName,
+          display_name: displayName,
+          role: role,
+          isGuest: false,
+          provider: "supabase",
+        };
+
+        setUser(authenticatedUser);
+        await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+        return { success: true, user: authenticatedUser };
+      }
+
+      return { success: false, error: "Invalid email or password." };
     } catch (e: any) {
       return { success: false, error: e?.message || "Failed to reach authentication server." };
     } finally {
@@ -450,21 +536,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       message: "Purging session credentials, security tokens, and local cache...",
     });
 
-    // 2. Clear backend session
+    // 2. Clear Supabase cloud session
+    const supaToken = localStorage.getItem("seediq_supabase_token");
+    if (supaToken) {
+      try {
+        await supabase.auth.signOut(supaToken);
+      } catch {
+        // ignore
+      }
+      localStorage.removeItem("seediq_supabase_token");
+    }
+
+    // 3. Clear backend session
     try {
       await fetch("/api/logout", { method: "POST" });
     } catch {
       // ignore
     }
 
-    // 3. Complete Client Purge
+    // 4. Complete Client Purge
     setUser(null);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(GUEST_EXPIRY_KEY);
     sessionStorage.clear();
     setGuestTimeRemaining(null);
 
-    // 4. Hold animation for smooth transition then redirect
+    // 5. Hold animation for smooth transition then redirect
     await new Promise((res) => setTimeout(res, 1200));
     setAuthTransition({ type: null, message: "" });
 

@@ -23,7 +23,14 @@ export const Route = createFileRoute("/register")({
 
 function RegisterPage() {
   const navigate = useNavigate();
-  const { requestRegistrationOtp, verifyRegistrationOtp } = useAuth();
+  const { user, requestRegistrationOtp, verifyRegistrationOtp } = useAuth();
+
+  // If user is already authenticated, redirect straight to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate({ to: "/dashboard" });
+    }
+  }, [user, navigate]);
 
   // Registration step: "form" | "otp"
   const [step, setStep] = useState<"form" | "otp">("form");
