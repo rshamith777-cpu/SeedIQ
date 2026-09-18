@@ -21,7 +21,7 @@ function AppLayout() {
   }, [user, isLoading, navigate]);
 
   // Loading state while checking authentication credentials
-  if (isLoading) {
+  if (isLoading && !user) {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#020B06] text-white p-6">
         <div className="flex flex-col items-center gap-4 max-w-sm text-center">

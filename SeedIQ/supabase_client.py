@@ -10,6 +10,7 @@ import logging
 import requests
 import datetime
 from typing import Dict, Any, Optional, List, Tuple
+from requests.adapters import HTTPAdapter
 
 logger = logging.getLogger("seediq.supabase")
 
@@ -20,7 +21,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://cqcdfvetexaqqcfogcds.supa
 SUPABASE_PUBLISHABLE_KEY = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_ysdQ2JVY5i7PY-plyOmh3w_ORe-Wr1e").strip()
 SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY", "").strip()
 
-DEFAULT_TIMEOUT = 10  # seconds
+DEFAULT_TIMEOUT = 8  # Fast 8-second timeout to prevent cloud gateway worker blocks
 
 
 class SupabaseClient:
@@ -28,7 +29,13 @@ class SupabaseClient:
         self.url = (url or SUPABASE_URL).rstrip("/")
         self.key = key or SUPABASE_PUBLISHABLE_KEY
         self.secret_key = secret_key or SUPABASE_SECRET_KEY
-        # Use secret key for server-side elevated requests if available, else publishable key
+        # High-performance persistent connection pooling
+        self.session = requests.Session()
+        adapter = HTTPAdapter(pool_connections=10, pool_maxsize=25, max_retries=1)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+        self._verified_buckets = set()
+
         self.auth_headers = {
             "apikey": self.key,
             "Authorization": f"Bearer {self.key}",
@@ -66,7 +73,7 @@ class SupabaseClient:
             }
         }
         try:
-            resp = requests.post(endpoint, json=payload, headers=self._get_headers(), timeout=DEFAULT_TIMEOUT)
+            resp = self.session.post(endpoint, json=payload, headers=self._get_headers(), timeout=DEFAULT_TIMEOUT)
             data = resp.json() if resp.text else {}
             if resp.status_code in [200, 201]:
                 user_id = data.get("id") or (data.get("user") or {}).get("id")
@@ -91,7 +98,7 @@ class SupabaseClient:
             "password": password
         }
         try:
-            resp = requests.post(endpoint, json=payload, headers=self._get_headers(), timeout=DEFAULT_TIMEOUT)
+            resp = self.session.post(endpoint, json=payload, headers=self._get_headers(), timeout=DEFAULT_TIMEOUT)
             data = resp.json() if resp.text else {}
             if resp.status_code == 200 and "access_token" in data:
                 user = data.get("user", {})
@@ -125,7 +132,7 @@ class SupabaseClient:
         endpoint = f"{self.url}/auth/v1/user"
         payload = {"password": new_password}
         try:
-            resp = requests.put(endpoint, json=payload, headers=self._get_headers(token=access_token), timeout=DEFAULT_TIMEOUT)
+            resp = self.session.put(endpoint, json=payload, headers=self._get_headers(token=access_token), timeout=DEFAULT_TIMEOUT)
             data = resp.json() if resp.text else {}
             if resp.status_code in [200, 204]:
                 return True, data
@@ -143,7 +150,7 @@ class SupabaseClient:
         endpoint = f"{self.url}/auth/v1/recover"
         payload = {"email": email.strip().lower()}
         try:
-            resp = requests.post(endpoint, json=payload, headers=self._get_headers(), timeout=DEFAULT_TIMEOUT)
+            resp = self.session.post(endpoint, json=payload, headers=self._get_headers(), timeout=DEFAULT_TIMEOUT)
             data = resp.json() if resp.text else {}
             return (resp.status_code in [200, 204]), data
         except Exception as e:
@@ -156,7 +163,7 @@ class SupabaseClient:
     def get_profile(self, user_id: str, token: Optional[str] = None) -> Optional[Dict[str, Any]]:
         endpoint = f"{self.url}/rest/v1/profiles?id=eq.{user_id}&select=*"
         try:
-            resp = requests.get(endpoint, headers=self._get_headers(token), timeout=DEFAULT_TIMEOUT)
+            resp = self.session.get(endpoint, headers=self._get_headers(token), timeout=DEFAULT_TIMEOUT)
             if resp.status_code == 200:
                 rows = resp.json()
                 return rows[0] if rows else None
@@ -178,7 +185,7 @@ class SupabaseClient:
         headers = self._get_headers(token)
         headers["Prefer"] = "resolution=merge-duplicates,return=representation"
         try:
-            resp = requests.post(endpoint, json=profile_data, headers=headers, timeout=DEFAULT_TIMEOUT)
+            resp = self.session.post(endpoint, json=profile_data, headers=headers, timeout=DEFAULT_TIMEOUT)
             if resp.status_code in [200, 201]:
                 res = resp.json()
                 return res[0] if isinstance(res, list) and res else profile_data
@@ -191,38 +198,64 @@ class SupabaseClient:
     # --------------------------------------------------------------------------
     def ensure_bucket(self, bucket_name: str = "seediq-datasets", is_public: bool = False, token: Optional[str] = None) -> bool:
         """
-        Checks if bucket exists; creates if missing.
+        Checks if bucket exists; creates if missing. Caches verified buckets to avoid extra roundtrips.
         """
+        if bucket_name in self._verified_buckets:
+            return True
+
         endpoint = f"{self.url}/storage/v1/bucket"
         try:
-            resp = requests.get(endpoint, headers=self._get_headers(token), timeout=DEFAULT_TIMEOUT)
+            resp = self.session.get(endpoint, headers=self._get_headers(token), timeout=DEFAULT_TIMEOUT)
             if resp.status_code == 200:
                 buckets = resp.json()
                 if any(b.get("id") == bucket_name or b.get("name") == bucket_name for b in buckets):
+                    self._verified_buckets.add(bucket_name)
                     return True
             # Attempt to create
-            create_resp = requests.post(
+            create_resp = self.session.post(
                 endpoint,
                 json={"id": bucket_name, "name": bucket_name, "public": is_public},
                 headers=self._get_headers(token),
                 timeout=DEFAULT_TIMEOUT
             )
-            return create_resp.status_code in [200, 201]
+            if create_resp.status_code in [200, 201]:
+                self._verified_buckets.add(bucket_name)
+                return True
+            return False
         except Exception as e:
             logger.error(f"ensure_bucket error: {e}")
             return False
 
-    def upload_file(self, bucket_name: str, path_in_bucket: str, file_bytes: bytes, content_type: str = "text/csv", token: Optional[str] = None) -> Tuple[bool, str]:
+    def upload_file(self, bucket_name: str, path_in_bucket: str, file_data: Any, content_type: str = "text/csv", token: Optional[str] = None) -> Tuple[bool, str]:
         """
         Uploads binary/text object to Supabase Storage.
+        Supports in-memory bytes, open file streams, or file paths (streamed directly from disk for 4 GB scale).
         """
         clean_path = path_in_bucket.lstrip("/")
         endpoint = f"{self.url}/storage/v1/object/{bucket_name}/{clean_path}"
         headers = self._get_headers(token)
         headers["Content-Type"] = content_type
         headers["x-upsert"] = "true"
+
+        MAX_STORAGE_UPLOAD_SIZE = 10 * 1024 * 1024
+        if isinstance(file_data, str) and os.path.isfile(file_data):
+            if os.path.getsize(file_data) > MAX_STORAGE_UPLOAD_SIZE:
+                return False, "File size must be 10 MB or less."
+        elif isinstance(file_data, (bytes, bytearray)):
+            if len(file_data) > MAX_STORAGE_UPLOAD_SIZE:
+                return False, "File size must be 10 MB or less."
+
+        timeout_sec = 60
         try:
-            resp = requests.post(endpoint, data=file_bytes, headers=headers, timeout=30)
+            if isinstance(file_data, str) and os.path.isfile(file_data):
+                file_size = os.path.getsize(file_data)
+                # Adaptive timeout: 60s base + 1s per 2MB
+                timeout_sec = max(60, int(60 + (file_size / (2 * 1024 * 1024))))
+                with open(file_data, 'rb') as stream:
+                    resp = self.session.post(endpoint, data=stream, headers=headers, timeout=timeout_sec)
+            else:
+                resp = self.session.post(endpoint, data=file_data, headers=headers, timeout=timeout_sec)
+
             if resp.status_code in [200, 201]:
                 return True, clean_path
             else:
@@ -236,7 +269,7 @@ class SupabaseClient:
         clean_path = path_in_bucket.lstrip("/")
         endpoint = f"{self.url}/storage/v1/object/{bucket_name}/{clean_path}"
         try:
-            resp = requests.get(endpoint, headers=self._get_headers(token), timeout=30)
+            resp = self.session.get(endpoint, headers=self._get_headers(token), timeout=12)
             if resp.status_code == 200:
                 return resp.content
             return None
@@ -248,7 +281,7 @@ class SupabaseClient:
         clean_path = path_in_bucket.lstrip("/")
         endpoint = f"{self.url}/storage/v1/object/sign/{bucket_name}/{clean_path}"
         try:
-            resp = requests.post(endpoint, json={"expiresIn": expires_in}, headers=self._get_headers(token), timeout=DEFAULT_TIMEOUT)
+            resp = self.session.post(endpoint, json={"expiresIn": expires_in}, headers=self._get_headers(token), timeout=DEFAULT_TIMEOUT)
             if resp.status_code == 200:
                 data = resp.json()
                 signed_path = data.get("signedURL") or data.get("signedUrl")
@@ -267,7 +300,7 @@ class SupabaseClient:
         headers = self._get_headers(token)
         headers["Prefer"] = "return=representation"
         try:
-            resp = requests.post(endpoint, json=row, headers=headers, timeout=DEFAULT_TIMEOUT)
+            resp = self.session.post(endpoint, json=row, headers=headers, timeout=DEFAULT_TIMEOUT)
             if resp.status_code in [200, 201]:
                 return True, resp.json()
             return False, resp.text
@@ -278,7 +311,7 @@ class SupabaseClient:
         endpoint = f"{self.url}/rest/v1/{table_name}?{query_params}"
         headers = self._get_headers(token)
         try:
-            resp = requests.get(endpoint, headers=headers, timeout=DEFAULT_TIMEOUT)
+            resp = self.session.get(endpoint, headers=headers, timeout=DEFAULT_TIMEOUT)
             if resp.status_code == 200:
                 return True, resp.json()
             return False, []

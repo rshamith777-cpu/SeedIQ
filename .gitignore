@@ -37,6 +37,7 @@ instance/
 # Node & Frontend
 node_modules/
 .output/
+.vercel/
 .wrangler/
 .nitro/
 dist/
@@ -57,3 +58,13 @@ powershell.exe
 .DS_Store
 Thumbs.db
 *.log
+
+# Backups & Temporary files
+*.bak
+backups/
+SeedIQ/backups/
+SeedIQ/data/temp_uploads/
+SeedIQ/data/2026*
+SeedIQ/data/*_processed.csv
+data/
+*.tmp

@@ -17,4 +17,5 @@ flask-cors
 python-dotenv
 requests
 joblib
+cryptography
 

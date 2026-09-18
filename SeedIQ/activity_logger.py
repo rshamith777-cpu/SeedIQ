@@ -9,9 +9,11 @@ import json
 import sqlite3
 import datetime
 from typing import Dict, Any, Optional
+from concurrent.futures import ThreadPoolExecutor
 from flask import request, session
 
 DATABASE_PATH = os.path.join(os.path.dirname(__file__), 'seediq.db')
+_log_executor = ThreadPoolExecutor(max_workers=2)
 
 def _ensure_sqlite_activity_table():
     try:
@@ -75,7 +77,7 @@ def log_activity(
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
     details_json = json.dumps(safe_details)
 
-    # 1. Write to local SQLite (always available)
+    # 1. Write to local SQLite (always available and instantaneous)
     try:
         conn = sqlite3.connect(DATABASE_PATH)
         conn.execute('''
@@ -87,17 +89,22 @@ def log_activity(
     except Exception as e:
         print(f"[ACTIVITY_LOGGER] SQLite write failed: {e}")
 
-    # 2. Dual-write to Supabase
+    # 2. Asynchronous Dual-write to Supabase (never blocks HTTP request thread)
+    def _async_supabase_log():
+        try:
+            from supabase_client import supabase
+            supabase.insert_row("activity_logs", {
+                "user_id": user_id if (isinstance(user_id, str) and len(user_id) == 36 and '-' in user_id) else None,
+                "event_type": event_type,
+                "details": safe_details,
+                "status": status,
+                "ip_address": ip_address,
+                "created_at": now_iso
+            }, token=token)
+        except Exception:
+            pass
+
     try:
-        from supabase_client import supabase
-        supabase.insert_row("activity_logs", {
-            "user_id": user_id if (isinstance(user_id, str) and len(user_id) == 36 and '-' in user_id) else None,
-            "event_type": event_type,
-            "details": safe_details,
-            "status": status,
-            "ip_address": ip_address,
-            "created_at": now_iso
-        }, token=token)
-    except Exception as e:
-        # Non-blocking, SQLite log succeeded
+        _log_executor.submit(_async_supabase_log)
+    except Exception:
         pass

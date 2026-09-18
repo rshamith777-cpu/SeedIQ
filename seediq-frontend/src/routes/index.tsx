@@ -597,6 +597,8 @@ function SeedIQHomepage() {
                 <img
                   src="/crops/rice/crop.webp"
                   alt="Crop AI Recommendation"
+                  loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
@@ -650,6 +652,8 @@ function SeedIQHomepage() {
                 <img
                   src="/crops/wheat/crop.webp"
                   alt="Yield AI Forecasting"
+                  loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
@@ -703,6 +707,8 @@ function SeedIQHomepage() {
                 <img
                   src="/crops/tomato/storage.webp"
                   alt="Seed AI Storage & Regeneration"
+                  loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />

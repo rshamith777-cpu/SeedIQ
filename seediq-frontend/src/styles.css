@@ -366,3 +366,81 @@
 @utility animate-shimmer     { background: linear-gradient(90deg, transparent, hsl(var(--gold) / 0.25), transparent); background-size: 200% 100%; animation: shimmer 3s linear infinite; }
 @utility animate-rise        { animation: rise 0.8s cubic-bezier(.2,.8,.2,1) both; }
 @utility animate-scan        { animation: scan 3s ease-in-out infinite; }
+
+/* ============================================================
+   Hardware Acceleration & Performance Optimizations
+   ============================================================ */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* ============================================================
+   Publication-Grade Executive Print Stylesheet
+   ============================================================ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 14mm;
+  }
+
+  /* Reset body and document canvas for pristine printing */
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide app navigation chrome, background glows, and interactive controls */
+  aside,
+  header,
+  nav,
+  .no-print,
+  [data-no-print="true"],
+  .pointer-events-none,
+  button,
+  .interactive-bg,
+  [role="dialog"] > div:not(.print-target) {
+    display: none !important;
+  }
+
+  /* If a dedicated report modal is open during print, expand it cleanly to full page */
+  .printable-report-sheet {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #09090b !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Clean contrast for text and badges */
+  .printable-report-sheet * {
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+
+  .print-break-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Ensure tables render crisply on paper */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+  }
+}
+

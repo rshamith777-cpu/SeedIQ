@@ -556,3 +556,485 @@
 [2026-07-17 11:20:37] Registered model meta_model.pkl in training_registry.json
 [2026-07-17 11:20:38] Pipeline execution finished gracefully.
 
+
+======================================================================
+  SeedIQ FULL RETRAIN -- 2026-09-13 00:09:39
+======================================================================
+
+======================================================================
+  PHASE 1A: Cleaning Crop Recommendation Dataset
+======================================================================
+[00:09:39][  ] Loaded Crop_recommendation.csv: (2200, 8)
+[00:09:39][  ] Removed 0 duplicate/NaN rows
+[00:09:40][  ]   Clipped 22 outliers in Nitrogen
+[00:09:40][  ]   Clipped 42 outliers in Phosphorus
+[00:09:40][  ]   Clipped 35 outliers in Potassium
+[00:09:40][  ]   Clipped 42 outliers in Temperature
+[00:09:40][  ]   Clipped 42 outliers in Humidity
+[00:09:40][  ]   Clipped 42 outliers in pH
+[00:09:40][  ]   Clipped 40 outliers in Rainfall
+[00:09:40][OK] Clean Crop: 1935 rows
+[00:09:40][  ] PHASE 2A: Preprocessing Crop Features
+[00:09:40][  ]   Feats: ['Nitrogen', 'Phosphorus', 'Potassium', 'Temperature', 'Humidity', 'pH', 'Rainfall'] | Classes: ['apple', 'banana', 'blackgram', 'chickpea', 'coconut', 'coffee', 'cotton', 'grapes', 'jute', 'kidneybeans', 'lentil', 'maize', 'mango', 'mothbeans', 'mungbean', 'muskmelon', 'orange', 'papaya', 'pigeonpeas', 'pomegranate', 'rice', 'watermelon']
+
+======================================================================
+  PHASE 3+4: Hyperparameter Tuning -- Crop_Recommendation
+======================================================================
+[00:09:40][  ]   Train: 1548 | Test: 387
+[00:09:40][  ]   Baseline score: 0.0045
+[00:09:40][  ] 
+  Tuning [RandomForest] -- 72 combinations
+[00:12:58][  ]     Best Params:  {"class_weight": null, "max_depth": 15, "max_features": "sqrt", "min_samples_split": 2, "n_estimators": 200}
+[00:12:58][OK]     CV=0.9935 Test=0.9919 Train=1.0000 Gap=0.0081 (HEALTHY)
+[00:12:58][  ] 
+  Tuning [XGBoost] -- 108 combinations
+[00:18:36][  ]     Best Params:  {"learning_rate": 0.1, "max_depth": 3, "n_estimators": 200, "reg_alpha": 0, "subsample": 1.0}
+[00:18:36][OK]     CV=0.9897 Test=0.9772 Train=1.0000 Gap=0.0228 (HEALTHY)
+[00:18:36][  ] 
+  Tuning [SVM] -- 24 combinations
+[00:18:51][  ]     Best Params:  {"svc__C": 10, "svc__gamma": "scale", "svc__kernel": "rbf"}
+[00:18:51][OK]     CV=0.9871 Test=0.9853 Train=0.9936 Gap=0.0083 (HEALTHY)
+[00:18:51][  ] 
+  Tuning [KNN] -- 20 combinations
+[00:18:53][  ]     Best Params:  {"knn__metric": "manhattan", "knn__n_neighbors": 3, "knn__weights": "distance"}
+[00:18:53][OK]     CV=0.9732 Test=0.9777 Train=1.0000 Gap=0.0223 (HEALTHY)
+[00:18:53][  ] 
+  Tuning [GradientBoosting] -- 24 combinations
+[00:27:48][  ]     Best Params:  {"learning_rate": 0.1, "max_depth": 5, "n_estimators": 200, "subsample": 0.8}
+[00:27:48][OK]     CV=0.9843 Test=0.9780 Train=1.0000 Gap=0.0220 (HEALTHY)
+[00:27:48][  ] 
+  Tuning [SimulatedQML] -- 9 combinations
+[00:27:58][  ]     Best Params:  {"alpha": 0.0001, "n_components": 16}
+[00:27:58][OK]     CV=0.9488 Test=0.9392 Train=0.9763 Gap=0.0372 (HEALTHY)
+[00:27:58][OK] 
+WINNER [Crop_Recommendation]: RandomForest Test=0.9919
+
+======================================================================
+  PHASE 1B: Cleaning Yield Prediction Dataset
+======================================================================
+[00:27:59][  ] Loaded Crop Yiled with Soil and Weather.csv: (2596, 6)
+[00:27:59][  ] Removed 11 duplicate/NaN rows
+[00:27:59][OK] Clean Yield: 2585 rows
+[00:27:59][  ] PHASE 2B: Preprocessing Yield Features
+[00:27:59][XX] Yield pipeline error: 'Yield_Tonnes'
+
+======================================================================
+  PHASE 1C: Cleaning Seed Viability Dataset
+======================================================================
+[00:27:59][  ] Loaded Seed_Data.csv: (210, 8)
+[00:27:59][  ] Removed 0 duplicate/NaN rows
+[00:27:59][OK] Clean Seed: 210 rows
+[00:27:59][  ] PHASE 2C: Preprocessing Seed Features
+[00:27:59][XX] Seed pipeline error: Cannot cast array data from dtype('float64') to dtype('int64') according to the rule 'safe'
+
+======================================================================
+  PIPELINE SUMMARY REPORT
+======================================================================
+[00:27:59][  ] Total Duration: 1100.1s
+[00:27:59][  ] 
+============================================================
+[00:27:59][  ]   Task:         Crop_Recommendation
+[00:27:59][  ]   Best Model:   RandomForest
+[00:27:59][  ]   Best Params:  {"class_weight": null, "max_depth": 15, "max_features": "sqrt", "min_samples_split": 2, "n_estimators": 200}
+[00:27:59][  ]   Baseline:     0.0045
+[00:27:59][  ]   CV Score:     0.9935
+[00:27:59][  ]   Test Score:   0.9919
+[00:27:59][  ]   Train Score:  1.0
+[00:27:59][  ]   Gap/Status:   0.0081 (HEALTHY)
+[00:27:59][  ]   Metrics:      {"accuracy": 0.9922, "f1_macro": 0.9919, "precision": 0.9937, "recall": 0.9908}
+[00:27:59][  ]   All Models:
+[00:27:59][  ]     [RandomForest        ] test=0.9919 cv=0.9935 gap=0.0081 HEALTHY
+[00:27:59][  ]     [XGBoost             ] test=0.9772 cv=0.9897 gap=0.0228 HEALTHY
+[00:27:59][  ]     [SVM                 ] test=0.9853 cv=0.9871 gap=0.0083 HEALTHY
+[00:27:59][  ]     [KNN                 ] test=0.9777 cv=0.9732 gap=0.0223 HEALTHY
+[00:27:59][  ]     [GradientBoosting    ] test=0.9780 cv=0.9843 gap=0.0220 HEALTHY
+[00:27:59][  ]     [SimulatedQML        ] test=0.9392 cv=0.9488 gap=0.0372 HEALTHY
+[00:28:00][OK] Report -> C:\Users\SUMITH R\Desktop\SeedIQ1\SeedIQ\reports\full_retrain\retrain_report.txt
+[00:28:00][OK] Metrics -> C:\Users\SUMITH R\Desktop\SeedIQ1\SeedIQ\reports\full_retrain\retrain_metrics.json
+[00:28:00][OK] RETRAIN COMPLETE!
+
+======================================================================
+  SeedIQ FULL RETRAIN -- 2026-09-13 00:29:33
+======================================================================
+
+======================================================================
+  PHASE 1A: Cleaning Crop Recommendation Dataset
+======================================================================
+[00:29:33][  ] Loaded Crop_recommendation.csv: (2200, 8)
+[00:29:33][  ] Removed 0 duplicate/NaN rows
+[00:29:33][  ]   Clipped 22 outliers in Nitrogen
+[00:29:33][  ]   Clipped 42 outliers in Phosphorus
+[00:29:33][  ]   Clipped 35 outliers in Potassium
+[00:29:33][  ]   Clipped 42 outliers in Temperature
+[00:29:33][  ]   Clipped 42 outliers in Humidity
+[00:29:33][  ]   Clipped 42 outliers in pH
+[00:29:33][  ]   Clipped 40 outliers in Rainfall
+[00:29:33][OK] Clean Crop: 1935 rows
+[00:29:33][  ] PHASE 2A: Preprocessing Crop Features
+[00:29:33][  ]   Feats: ['Nitrogen', 'Phosphorus', 'Potassium', 'Temperature', 'Humidity', 'pH', 'Rainfall'] | Classes: ['apple', 'banana', 'blackgram', 'chickpea', 'coconut', 'coffee', 'cotton', 'grapes', 'jute', 'kidneybeans', 'lentil', 'maize', 'mango', 'mothbeans', 'mungbean', 'muskmelon', 'orange', 'papaya', 'pigeonpeas', 'pomegranate', 'rice', 'watermelon']
+
+======================================================================
+  PHASE 3+4: Hyperparameter Tuning -- Crop_Recommendation
+======================================================================
+[00:29:33][  ]   Train: 1548 | Test: 387
+[00:29:33][  ]   Baseline score: 0.0045
+[00:29:33][  ] 
+  Tuning [RandomForest] -- 72 combinations
+[00:32:51][  ]     Best Params:  {"class_weight": null, "max_depth": 15, "max_features": "sqrt", "min_samples_split": 2, "n_estimators": 200}
+[00:32:51][OK]     CV=0.9935 Test=0.9919 Train=1.0000 Gap=0.0081 (HEALTHY)
+[00:32:51][  ] 
+  Tuning [XGBoost] -- 108 combinations
+[00:36:49][  ]     Best Params:  {"learning_rate": 0.1, "max_depth": 3, "n_estimators": 200, "reg_alpha": 0, "subsample": 1.0}
+[00:36:49][OK]     CV=0.9897 Test=0.9772 Train=1.0000 Gap=0.0228 (HEALTHY)
+[00:36:49][  ] 
+  Tuning [SVM] -- 24 combinations
+[00:37:01][  ]     Best Params:  {"svc__C": 10, "svc__gamma": "scale", "svc__kernel": "rbf"}
+[00:37:01][OK]     CV=0.9871 Test=0.9853 Train=0.9936 Gap=0.0083 (HEALTHY)
+[00:37:01][  ] 
+  Tuning [KNN] -- 20 combinations
+[00:37:02][  ]     Best Params:  {"knn__metric": "manhattan", "knn__n_neighbors": 3, "knn__weights": "distance"}
+[00:37:02][OK]     CV=0.9732 Test=0.9777 Train=1.0000 Gap=0.0223 (HEALTHY)
+[00:37:02][  ] 
+  Tuning [GradientBoosting] -- 24 combinations
+[00:45:10][  ]     Best Params:  {"learning_rate": 0.1, "max_depth": 5, "n_estimators": 200, "subsample": 0.8}
+[00:45:10][OK]     CV=0.9843 Test=0.9780 Train=1.0000 Gap=0.0220 (HEALTHY)
+[00:45:10][  ] 
+  Tuning [SimulatedQML] -- 9 combinations
+[00:45:17][  ]     Best Params:  {"alpha": 0.0001, "n_components": 16}
+[00:45:17][OK]     CV=0.9488 Test=0.9392 Train=0.9763 Gap=0.0372 (HEALTHY)
+[00:45:17][OK] 
+WINNER [Crop_Recommendation]: RandomForest Test=0.9919
+
+======================================================================
+  PHASE 1B: Cleaning Yield Prediction Dataset
+======================================================================
+[00:45:18][  ] Loaded Crop Yiled with Soil and Weather.csv: (2596, 6)
+[00:45:18][  ] Removed 11 duplicate/NaN rows
+[00:45:18][  ] Removed 0 non-positive yield rows
+[00:45:18][OK] Clean Yield: 2585 rows
+[00:45:18][  ] PHASE 2B: Preprocessing Yield Features
+[00:45:18][  ]   Feats (5): ['Fertilizer', 'temp', 'N', 'P', 'K']
+
+======================================================================
+  PHASE 3+4: Hyperparameter Tuning -- Yield_Prediction
+======================================================================
+[00:45:18][  ]   Train: 2068 | Test: 517
+[00:45:18][  ]   Baseline score: -0.0000
+[00:45:18][  ] 
+  Tuning [XGBoost] -- 162 combinations
+[00:46:31][  ]     Best Params:  {"learning_rate": 0.05, "max_depth": 7, "n_estimators": 200, "reg_alpha": 0.5, "subsample": 1.0}
+[00:46:31][OK]     CV=0.9881 Test=0.9894 Train=0.9977 Gap=0.0083 (HEALTHY)
+[00:46:31][  ] 
+  Tuning [RandomForest] -- 12 combinations
+[00:46:52][  ]     Best Params:  {"rf__max_depth": 15, "rf__min_samples_split": 2, "rf__n_estimators": 200}
+[00:46:52][OK]     CV=0.9903 Test=0.9909 Train=0.9986 Gap=0.0077 (HEALTHY)
+[00:46:52][  ] 
+  Tuning [GradientBoosting] -- 16 combinations
+[00:47:13][  ]     Best Params:  {"learning_rate": 0.1, "max_depth": 5, "n_estimators": 200, "subsample": 1.0}
+[00:47:13][OK]     CV=0.9883 Test=0.9890 Train=0.9979 Gap=0.0088 (HEALTHY)
+[00:47:13][  ] 
+  Tuning [Ridge] -- 5 combinations
+[00:47:13][  ]     Best Params:  {"ridge__alpha": 1.0}
+[00:47:13][OK]     CV=0.8627 Test=0.8718 Train=0.8651 Gap=-0.0067 (HEALTHY)
+[00:47:13][  ] 
+  Tuning [SimulatedQML] -- 9 combinations
+[00:49:05][  ]     Best Params:  {"alpha": 0.001, "n_components": 8}
+[00:49:05][OK]     CV=0.9872 Test=0.9879 Train=0.9985 Gap=0.0107 (HEALTHY)
+[00:49:05][OK] 
+WINNER [Yield_Prediction]: RandomForest Test=0.9909
+
+======================================================================
+  PHASE 1C: Cleaning Seed Viability Dataset
+======================================================================
+[00:49:05][  ] Loaded Seed_Data.csv: (210, 8)
+[00:49:06][  ] Removed 0 duplicate/NaN rows
+[00:49:06][  ]   Viable classes: [0, 1, 2]
+[00:49:06][OK] Clean Seed: 210 rows
+[00:49:06][  ] PHASE 2C: Preprocessing Seed Features
+[00:49:06][  ]   Feats: ['A', 'P', 'C', 'LK', 'WK', 'A_Coef', 'LKG'] | Classes: [0, 1, 2] | Samples: 210
+
+======================================================================
+  PHASE 3+4: Hyperparameter Tuning -- Seed_Viability
+======================================================================
+[00:49:06][  ]   Train: 168 | Test: 42
+[00:49:06][  ]   Baseline score: 0.1667
+[00:49:06][  ] 
+  Tuning [RandomForest] -- 72 combinations
+[00:50:26][  ]     Best Params:  {"class_weight": "balanced", "max_depth": null, "max_features": "sqrt", "min_samples_split": 2, "n_estimators": 100}
+[00:50:26][OK]     CV=0.9149 Test=0.9007 Train=1.0000 Gap=0.0993 (HEALTHY)
+[00:50:26][  ] 
+  Tuning [XGBoost] -- 108 combinations
+[00:50:43][  ]     Best Params:  {"learning_rate": 0.05, "max_depth": 5, "n_estimators": 100, "reg_alpha": 0, "subsample": 1.0}
+[00:50:43][OK]     CV=0.9389 Test=0.9007 Train=1.0000 Gap=0.0993 (HEALTHY)
+[00:50:43][  ] 
+  Tuning [SVM] -- 24 combinations
+[00:50:43][  ]     Best Params:  {"svc__C": 100, "svc__gamma": "scale", "svc__kernel": "linear"}
+[00:50:43][OK]     CV=0.9524 Test=0.9277 Train=1.0000 Gap=0.0723 (HEALTHY)
+[00:50:43][  ] 
+  Tuning [KNN] -- 20 combinations
+[00:50:43][  ]     Best Params:  {"knn__metric": "manhattan", "knn__n_neighbors": 3, "knn__weights": "uniform"}
+[00:50:43][OK]     CV=0.9285 Test=0.8731 Train=0.9643 Gap=0.0912 (HEALTHY)
+[00:50:43][  ] 
+  Tuning [GradientBoosting] -- 24 combinations
+[00:51:09][  ]     Best Params:  {"learning_rate": 0.05, "max_depth": 3, "n_estimators": 100, "subsample": 0.8}
+[00:51:09][OK]     CV=0.9341 Test=0.9263 Train=1.0000 Gap=0.0737 (HEALTHY)
+[00:51:09][  ] 
+  Tuning [SimulatedQML] -- 9 combinations
+[00:51:10][  ]     Best Params:  {"alpha": 0.0001, "n_components": 16}
+[00:51:10][OK]     CV=0.9214 Test=0.8452 Train=1.0000 Gap=0.1548 (POSSIBLE_OVERFITTING)
+[00:51:10][OK] 
+WINNER [Seed_Viability]: SVM Test=0.9277
+
+======================================================================
+  PIPELINE SUMMARY REPORT
+======================================================================
+[00:51:10][  ] Total Duration: 1296.3s
+[00:51:10][  ] 
+============================================================
+[00:51:10][  ]   Task:         Crop_Recommendation
+[00:51:10][  ]   Best Model:   RandomForest
+[00:51:10][  ]   Best Params:  {"class_weight": null, "max_depth": 15, "max_features": "sqrt", "min_samples_split": 2, "n_estimators": 200}
+[00:51:10][  ]   Baseline:     0.0045
+[00:51:10][  ]   CV Score:     0.9935
+[00:51:10][  ]   Test Score:   0.9919
+[00:51:10][  ]   Train Score:  1.0
+[00:51:10][  ]   Gap/Status:   0.0081 (HEALTHY)
+[00:51:10][  ]   Metrics:      {"accuracy": 0.9922, "f1_macro": 0.9919, "precision": 0.9937, "recall": 0.9908}
+[00:51:10][  ]   All Models:
+[00:51:10][  ]     [RandomForest        ] test=0.9919 cv=0.9935 gap=0.0081 HEALTHY
+[00:51:10][  ]     [XGBoost             ] test=0.9772 cv=0.9897 gap=0.0228 HEALTHY
+[00:51:10][  ]     [SVM                 ] test=0.9853 cv=0.9871 gap=0.0083 HEALTHY
+[00:51:10][  ]     [KNN                 ] test=0.9777 cv=0.9732 gap=0.0223 HEALTHY
+[00:51:10][  ]     [GradientBoosting    ] test=0.9780 cv=0.9843 gap=0.0220 HEALTHY
+[00:51:10][  ]     [SimulatedQML        ] test=0.9392 cv=0.9488 gap=0.0372 HEALTHY
+[00:51:10][  ] 
+============================================================
+[00:51:10][  ]   Task:         Yield_Prediction
+[00:51:10][  ]   Best Model:   RandomForest
+[00:51:10][  ]   Best Params:  {"rf__max_depth": 15, "rf__min_samples_split": 2, "rf__n_estimators": 200}
+[00:51:10][  ]   Baseline:     -0.0
+[00:51:10][  ]   CV Score:     0.9903
+[00:51:10][  ]   Test Score:   0.9909
+[00:51:10][  ]   Train Score:  0.9986
+[00:51:10][  ]   Gap/Status:   0.0077 (HEALTHY)
+[00:51:10][  ]   Metrics:      {"r2": 0.9909, "mae": 0.1208, "rmse": 0.1844}
+[00:51:10][  ]   All Models:
+[00:51:10][  ]     [XGBoost             ] test=0.9894 cv=0.9881 gap=0.0083 HEALTHY
+[00:51:10][  ]     [RandomForest        ] test=0.9909 cv=0.9903 gap=0.0077 HEALTHY
+[00:51:10][  ]     [GradientBoosting    ] test=0.9890 cv=0.9883 gap=0.0088 HEALTHY
+[00:51:10][  ]     [Ridge               ] test=0.8718 cv=0.8627 gap=-0.0067 HEALTHY
+[00:51:10][  ]     [SimulatedQML        ] test=0.9879 cv=0.9872 gap=0.0107 HEALTHY
+[00:51:10][  ] 
+============================================================
+[00:51:10][  ]   Task:         Seed_Viability
+[00:51:10][  ]   Best Model:   SVM
+[00:51:10][  ]   Best Params:  {"svc__C": 100, "svc__gamma": "scale", "svc__kernel": "linear"}
+[00:51:10][  ]   Baseline:     0.1667
+[00:51:10][  ]   CV Score:     0.9524
+[00:51:10][  ]   Test Score:   0.9277
+[00:51:10][  ]   Train Score:  1.0
+[00:51:10][  ]   Gap/Status:   0.0723 (HEALTHY)
+[00:51:10][  ]   Metrics:      {"accuracy": 0.9286, "f1_macro": 0.9277, "precision": 0.9412, "recall": 0.9286}
+[00:51:10][  ]   All Models:
+[00:51:10][  ]     [RandomForest        ] test=0.9007 cv=0.9149 gap=0.0993 HEALTHY
+[00:51:10][  ]     [XGBoost             ] test=0.9007 cv=0.9389 gap=0.0993 HEALTHY
+[00:51:10][  ]     [SVM                 ] test=0.9277 cv=0.9524 gap=0.0723 HEALTHY
+[00:51:10][  ]     [KNN                 ] test=0.8731 cv=0.9285 gap=0.0912 HEALTHY
+[00:51:10][  ]     [GradientBoosting    ] test=0.9263 cv=0.9341 gap=0.0737 HEALTHY
+[00:51:10][  ]     [SimulatedQML        ] test=0.8452 cv=0.9214 gap=0.1548 POSSIBLE_OVERFITTING
+[00:51:10][OK] Report -> C:\Users\SUMITH R\Desktop\SeedIQ1\SeedIQ\reports\full_retrain\retrain_report.txt
+[00:51:10][OK] Metrics -> C:\Users\SUMITH R\Desktop\SeedIQ1\SeedIQ\reports\full_retrain\retrain_metrics.json
+[00:51:10][OK] RETRAIN COMPLETE!
+
+======================================================================
+  SeedIQ FULL RETRAIN -- 2026-09-13 01:11:24
+======================================================================
+
+======================================================================
+  PHASE 1A: Cleaning Crop Recommendation Dataset
+======================================================================
+[01:11:25][  ] Loaded Crop_recommendation.csv: (2200, 8)
+[01:11:25][  ] Removed 0 duplicate/NaN rows
+[01:11:25][  ]   Clipped 22 outliers in Nitrogen
+[01:11:25][  ]   Clipped 42 outliers in Phosphorus
+[01:11:25][  ]   Clipped 35 outliers in Potassium
+[01:11:25][  ]   Clipped 42 outliers in Temperature
+[01:11:25][  ]   Clipped 42 outliers in Humidity
+[01:11:25][  ]   Clipped 42 outliers in pH
+[01:11:25][  ]   Clipped 40 outliers in Rainfall
+[01:11:25][OK] Clean Crop: 1935 rows
+[01:11:25][  ] PHASE 2A: Preprocessing Crop Features
+[01:11:25][  ]   Feats: ['Nitrogen', 'Phosphorus', 'Potassium', 'Temperature', 'Humidity', 'pH', 'Rainfall'] | Classes: ['apple', 'banana', 'blackgram', 'chickpea', 'coconut', 'coffee', 'cotton', 'grapes', 'jute', 'kidneybeans', 'lentil', 'maize', 'mango', 'mothbeans', 'mungbean', 'muskmelon', 'orange', 'papaya', 'pigeonpeas', 'pomegranate', 'rice', 'watermelon']
+
+======================================================================
+  PHASE 3+4: Hyperparameter Tuning -- Crop_Recommendation
+======================================================================
+[01:11:25][  ]   Train: 1548 | Test: 387
+[01:11:25][  ]   Baseline score: 0.0045
+[01:11:25][  ] 
+  Tuning [RandomForest] -- 72 combinations
+[01:14:34][  ]     Best Params:  {"class_weight": null, "max_depth": 15, "max_features": "sqrt", "min_samples_split": 2, "n_estimators": 200}
+[01:14:34][OK]     CV=0.9935 Test=0.9919 Train=1.0000 Gap=0.0081 (HEALTHY)
+[01:14:34][  ] 
+  Tuning [XGBoost] -- 108 combinations
+[01:20:12][  ]     Best Params:  {"learning_rate": 0.1, "max_depth": 3, "n_estimators": 200, "reg_alpha": 0, "subsample": 1.0}
+[01:20:12][OK]     CV=0.9897 Test=0.9772 Train=1.0000 Gap=0.0228 (HEALTHY)
+[01:20:12][  ] 
+  Tuning [SVM] -- 24 combinations
+[01:20:26][  ]     Best Params:  {"svc__C": 10, "svc__gamma": "scale", "svc__kernel": "rbf"}
+[01:20:26][OK]     CV=0.9871 Test=0.9853 Train=0.9936 Gap=0.0083 (HEALTHY)
+[01:20:26][  ] 
+  Tuning [KNN] -- 20 combinations
+[01:20:28][  ]     Best Params:  {"knn__metric": "manhattan", "knn__n_neighbors": 3, "knn__weights": "distance"}
+[01:20:28][OK]     CV=0.9732 Test=0.9777 Train=1.0000 Gap=0.0223 (HEALTHY)
+[01:20:28][  ] 
+  Tuning [GradientBoosting] -- 24 combinations
+[01:29:56][  ]     Best Params:  {"learning_rate": 0.1, "max_depth": 5, "n_estimators": 200, "subsample": 0.8}
+[01:29:56][OK]     CV=0.9843 Test=0.9780 Train=1.0000 Gap=0.0220 (HEALTHY)
+[01:29:56][  ] 
+  Tuning [SimulatedQML] -- 9 combinations
+[01:30:05][  ]     Best Params:  {"alpha": 0.0001, "n_components": 16}
+[01:30:05][OK]     CV=0.9488 Test=0.9392 Train=0.9763 Gap=0.0372 (HEALTHY)
+[01:30:05][OK] 
+WINNER [Crop_Recommendation]: RandomForest Test=0.9919
+
+======================================================================
+  PHASE 1B: Cleaning Yield Prediction Dataset
+======================================================================
+[01:30:05][  ] Loaded Crop Yiled with Soil and Weather.csv: (2596, 6)
+[01:30:05][  ] Removed 11 duplicate/NaN rows
+[01:30:05][  ] Removed 0 non-positive yield rows
+[01:30:05][OK] Clean Yield: 2585 rows
+[01:30:05][  ] PHASE 2B: Preprocessing Yield Features
+[01:30:05][  ]   Feats (5): ['Fertilizer', 'temp', 'N', 'P', 'K']
+
+======================================================================
+  PHASE 3+4: Hyperparameter Tuning -- Yield_Prediction
+======================================================================
+[01:30:05][  ]   Train: 2068 | Test: 517
+[01:30:05][  ]   Baseline score: -0.0000
+[01:30:05][  ] 
+  Tuning [XGBoost] -- 162 combinations
+[01:31:23][  ]     Best Params:  {"learning_rate": 0.05, "max_depth": 7, "n_estimators": 200, "reg_alpha": 0.5, "subsample": 1.0}
+[01:31:23][OK]     CV=0.9881 Test=0.9894 Train=0.9977 Gap=0.0083 (HEALTHY)
+[01:31:23][  ] 
+  Tuning [RandomForest] -- 12 combinations
+[01:31:44][  ]     Best Params:  {"rf__max_depth": 15, "rf__min_samples_split": 2, "rf__n_estimators": 200}
+[01:31:44][OK]     CV=0.9903 Test=0.9909 Train=0.9986 Gap=0.0077 (HEALTHY)
+[01:31:44][  ] 
+  Tuning [GradientBoosting] -- 16 combinations
+[01:32:01][  ]     Best Params:  {"learning_rate": 0.1, "max_depth": 5, "n_estimators": 200, "subsample": 1.0}
+[01:32:01][OK]     CV=0.9883 Test=0.9890 Train=0.9979 Gap=0.0088 (HEALTHY)
+[01:32:01][  ] 
+  Tuning [Ridge] -- 5 combinations
+[01:32:01][  ]     Best Params:  {"ridge__alpha": 1.0}
+[01:32:01][OK]     CV=0.8627 Test=0.8718 Train=0.8651 Gap=-0.0067 (HEALTHY)
+[01:32:01][  ] 
+  Tuning [SimulatedQML] -- 9 combinations
+[01:33:50][  ]     Best Params:  {"alpha": 0.001, "n_components": 8}
+[01:33:50][OK]     CV=0.9872 Test=0.9879 Train=0.9985 Gap=0.0107 (HEALTHY)
+[01:33:50][OK] 
+WINNER [Yield_Prediction]: RandomForest Test=0.9909
+
+======================================================================
+  PHASE 1C: Cleaning Seed Viability Dataset
+======================================================================
+[01:33:51][  ] Loaded Seed_Data.csv: (210, 8)
+[01:33:51][  ] Removed 0 duplicate/NaN rows
+[01:33:51][  ]   Viable classes: [0, 1, 2]
+[01:33:51][OK] Clean Seed: 210 rows
+[01:33:51][  ] PHASE 2C: Preprocessing Seed Features
+[01:33:51][  ]   Feats: ['A', 'P', 'C', 'LK', 'WK', 'A_Coef', 'LKG'] | Classes: [0, 1, 2] | Samples: 210
+
+======================================================================
+  PHASE 3+4: Hyperparameter Tuning -- Seed_Viability
+======================================================================
+[01:33:51][  ]   Train: 168 | Test: 42
+[01:33:51][  ]   Baseline score: 0.1667
+[01:33:51][  ] 
+  Tuning [RandomForest] -- 72 combinations
+[01:35:11][  ]     Best Params:  {"class_weight": "balanced", "max_depth": null, "max_features": "sqrt", "min_samples_split": 2, "n_estimators": 100}
+[01:35:11][OK]     CV=0.9149 Test=0.9007 Train=1.0000 Gap=0.0993 (HEALTHY)
+[01:35:11][  ] 
+  Tuning [XGBoost] -- 108 combinations
+[01:35:28][  ]     Best Params:  {"learning_rate": 0.05, "max_depth": 5, "n_estimators": 100, "reg_alpha": 0, "subsample": 1.0}
+[01:35:28][OK]     CV=0.9389 Test=0.9007 Train=1.0000 Gap=0.0993 (HEALTHY)
+[01:35:28][  ] 
+  Tuning [SVM] -- 24 combinations
+[01:35:29][  ]     Best Params:  {"svc__C": 100, "svc__gamma": "scale", "svc__kernel": "linear"}
+[01:35:29][OK]     CV=0.9524 Test=0.9277 Train=1.0000 Gap=0.0723 (HEALTHY)
+[01:35:29][  ] 
+  Tuning [KNN] -- 20 combinations
+[01:35:29][  ]     Best Params:  {"knn__metric": "manhattan", "knn__n_neighbors": 3, "knn__weights": "uniform"}
+[01:35:29][OK]     CV=0.9285 Test=0.8731 Train=0.9643 Gap=0.0912 (HEALTHY)
+[01:35:29][  ] 
+  Tuning [GradientBoosting] -- 24 combinations
+[01:35:59][  ]     Best Params:  {"learning_rate": 0.05, "max_depth": 3, "n_estimators": 100, "subsample": 0.8}
+[01:35:59][OK]     CV=0.9341 Test=0.9263 Train=1.0000 Gap=0.0737 (HEALTHY)
+[01:35:59][  ] 
+  Tuning [SimulatedQML] -- 9 combinations
+[01:36:01][  ]     Best Params:  {"alpha": 0.0001, "n_components": 16}
+[01:36:01][OK]     CV=0.9214 Test=0.8452 Train=1.0000 Gap=0.1548 (POSSIBLE_OVERFITTING)
+[01:36:01][OK] 
+WINNER [Seed_Viability]: SVM Test=0.9277
+
+======================================================================
+  PIPELINE SUMMARY REPORT
+======================================================================
+[01:36:01][  ] Total Duration: 1476.6s
+[01:36:01][  ] 
+============================================================
+[01:36:01][  ]   Task:         Crop_Recommendation
+[01:36:01][  ]   Best Model:   RandomForest
+[01:36:01][  ]   Best Params:  {"class_weight": null, "max_depth": 15, "max_features": "sqrt", "min_samples_split": 2, "n_estimators": 200}
+[01:36:01][  ]   Baseline:     0.0045
+[01:36:01][  ]   CV Score:     0.9935
+[01:36:01][  ]   Test Score:   0.9919
+[01:36:01][  ]   Train Score:  1.0
+[01:36:01][  ]   Gap/Status:   0.0081 (HEALTHY)
+[01:36:01][  ]   Metrics:      {"accuracy": 0.9922, "f1_macro": 0.9919, "precision": 0.9937, "recall": 0.9908}
+[01:36:01][  ]   All Models:
+[01:36:01][  ]     [RandomForest        ] test=0.9919 cv=0.9935 gap=0.0081 HEALTHY
+[01:36:01][  ]     [XGBoost             ] test=0.9772 cv=0.9897 gap=0.0228 HEALTHY
+[01:36:01][  ]     [SVM                 ] test=0.9853 cv=0.9871 gap=0.0083 HEALTHY
+[01:36:01][  ]     [KNN                 ] test=0.9777 cv=0.9732 gap=0.0223 HEALTHY
+[01:36:01][  ]     [GradientBoosting    ] test=0.9780 cv=0.9843 gap=0.0220 HEALTHY
+[01:36:01][  ]     [SimulatedQML        ] test=0.9392 cv=0.9488 gap=0.0372 HEALTHY
+[01:36:01][  ] 
+============================================================
+[01:36:01][  ]   Task:         Yield_Prediction
+[01:36:01][  ]   Best Model:   RandomForest
+[01:36:01][  ]   Best Params:  {"rf__max_depth": 15, "rf__min_samples_split": 2, "rf__n_estimators": 200}
+[01:36:01][  ]   Baseline:     -0.0
+[01:36:01][  ]   CV Score:     0.9903
+[01:36:01][  ]   Test Score:   0.9909
+[01:36:01][  ]   Train Score:  0.9986
+[01:36:01][  ]   Gap/Status:   0.0077 (HEALTHY)
+[01:36:01][  ]   Metrics:      {"r2": 0.9909, "mae": 0.1208, "rmse": 0.1844}
+[01:36:01][  ]   All Models:
+[01:36:01][  ]     [XGBoost             ] test=0.9894 cv=0.9881 gap=0.0083 HEALTHY
+[01:36:01][  ]     [RandomForest        ] test=0.9909 cv=0.9903 gap=0.0077 HEALTHY
+[01:36:01][  ]     [GradientBoosting    ] test=0.9890 cv=0.9883 gap=0.0088 HEALTHY
+[01:36:01][  ]     [Ridge               ] test=0.8718 cv=0.8627 gap=-0.0067 HEALTHY
+[01:36:01][  ]     [SimulatedQML        ] test=0.9879 cv=0.9872 gap=0.0107 HEALTHY
+[01:36:01][  ] 
+============================================================
+[01:36:01][  ]   Task:         Seed_Viability
+[01:36:01][  ]   Best Model:   SVM
+[01:36:01][  ]   Best Params:  {"svc__C": 100, "svc__gamma": "scale", "svc__kernel": "linear"}
+[01:36:01][  ]   Baseline:     0.1667
+[01:36:01][  ]   CV Score:     0.9524
+[01:36:01][  ]   Test Score:   0.9277
+[01:36:01][  ]   Train Score:  1.0
+[01:36:01][  ]   Gap/Status:   0.0723 (HEALTHY)
+[01:36:01][  ]   Metrics:      {"accuracy": 0.9286, "f1_macro": 0.9277, "precision": 0.9412, "recall": 0.9286}
+[01:36:01][  ]   All Models:
+[01:36:01][  ]     [RandomForest        ] test=0.9007 cv=0.9149 gap=0.0993 HEALTHY
+[01:36:01][  ]     [XGBoost             ] test=0.9007 cv=0.9389 gap=0.0993 HEALTHY
+[01:36:01][  ]     [SVM                 ] test=0.9277 cv=0.9524 gap=0.0723 HEALTHY
+[01:36:01][  ]     [KNN                 ] test=0.8731 cv=0.9285 gap=0.0912 HEALTHY
+[01:36:01][  ]     [GradientBoosting    ] test=0.9263 cv=0.9341 gap=0.0737 HEALTHY
+[01:36:01][  ]     [SimulatedQML        ] test=0.8452 cv=0.9214 gap=0.1548 POSSIBLE_OVERFITTING
+[01:36:01][OK] Report -> C:\Users\SUMITH R\Desktop\SeedIQ1\SeedIQ\reports\full_retrain\retrain_report.txt
+[01:36:01][OK] Metrics -> C:\Users\SUMITH R\Desktop\SeedIQ1\SeedIQ\reports\full_retrain\retrain_metrics.json
+[01:36:01][OK] RETRAIN COMPLETE!

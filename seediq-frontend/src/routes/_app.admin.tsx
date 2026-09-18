@@ -226,7 +226,7 @@ function Admin() {
                   <td className="py-4 text-emerald-300 font-bold">Crop: 99.22% · Yield R²: 0.9906 · Seed: 94.44%</td>
                   <td className="py-4 text-emerald-300">RMSE: 0.1132 / 0.1804</td>
                   <td className="py-4 text-emerald-300">10-Fold CV (99.42% / 99.01%)</td>
-                  <td className="py-4"><span className="rounded-md bg-emerald-500 text-black px-2.5 py-1 font-bold">Outperforms All Published Literature (<0.8% Gap)</span></td>
+                  <td className="py-4"><span className="rounded-md bg-emerald-500 text-black px-2.5 py-1 font-bold">Outperforms All Published Literature (&lt;0.8% Gap)</span></td>
                 </tr>
               </tbody>
             </table>

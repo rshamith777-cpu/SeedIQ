@@ -97,13 +97,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
 
+            const resolvedRole: UserRole =
+              data.user.email?.toLowerCase() === "admin@seediq.ai" || data.user.username === "admin"
+                ? "Admin"
+                : data.user.email?.toLowerCase() === "researcher@quantum.org" || data.user.username === "researcher"
+                ? "Researcher"
+                : data.user.role || "Farmer";
+
             setUser({
               id: data.user.id,
               username: data.user.username,
               email: data.user.email,
               name: data.user.display_name || data.user.username,
               display_name: data.user.display_name || data.user.username,
-              role: data.user.role || "Farmer",
+              role: resolvedRole,
               isGuest: isGuestRole,
               provider: data.user.provider || "local",
             });
@@ -120,13 +127,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const supaUser = await supabase.auth.getUser(supaToken);
           if (supaUser && supaUser.id) {
+            const userEmail = (supaUser.email || "").toLowerCase();
+            const resolvedRole: UserRole =
+              userEmail === "admin@seediq.ai"
+                ? "Admin"
+                : userEmail === "researcher@quantum.org"
+                ? "Researcher"
+                : (supaUser.user_metadata?.role as UserRole) || "Farmer";
+
             setUser({
               id: supaUser.id,
               username: supaUser.user_metadata?.username || supaUser.email?.split("@")[0] || "user",
               email: supaUser.email || "",
               name: supaUser.user_metadata?.display_name || supaUser.user_metadata?.name || supaUser.email?.split("@")[0] || "User",
               display_name: supaUser.user_metadata?.display_name || supaUser.email?.split("@")[0],
-              role: (supaUser.user_metadata?.role as UserRole) || "Farmer",
+              role: resolvedRole,
               isGuest: false,
               provider: "supabase",
             });
@@ -227,7 +242,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       userRole: role || "Farmer",
     });
 
-    await new Promise((res) => setTimeout(res, 1400));
+    // Fast transition without long artificial delay
+    await new Promise((res) => setTimeout(res, 250));
     setAuthTransition({ type: null, message: "" });
   }, []);
 
@@ -237,87 +253,113 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string
   ): Promise<{ success: boolean; user?: User; error?: string }> => {
     setIsLoading(true);
-    const normalizedEmail = email.trim().toLowerCase();
-
-    // First attempt: Backend Flask API (with Supabase sync)
     try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: normalizedEmail,
-          password: password,
-        }),
-      });
+      const rawInput = email.trim().toLowerCase();
+      const normalizedEmail =
+        rawInput === "admin"
+          ? "admin@seediq.ai"
+          : rawInput === "researcher"
+          ? "researcher@quantum.org"
+          : rawInput;
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.status === "success" && data.user) {
-          const backendUser = data.user;
+      // First attempt: Backend Flask API (with Supabase sync)
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: normalizedEmail,
+            password: password,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === "success" && data.user) {
+            const backendUser = data.user;
+            const userEmail = (backendUser.email || normalizedEmail).toLowerCase();
+            const resolvedRole: UserRole =
+              userEmail === "admin@seediq.ai" || backendUser.username === "admin"
+                ? "Admin"
+                : userEmail === "researcher@quantum.org" || backendUser.username === "researcher"
+                ? "Researcher"
+                : backendUser.role || "Farmer";
+
+            const authenticatedUser: User = {
+              id: backendUser.id,
+              username: backendUser.username,
+              email: backendUser.email || normalizedEmail,
+              name: backendUser.display_name || backendUser.username,
+              display_name: backendUser.display_name || backendUser.username,
+              role: resolvedRole,
+              isGuest: backendUser.role === "Guest",
+              provider: backendUser.provider || "supabase",
+            };
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
+            setUser(authenticatedUser);
+            setIsLoading(false);
+            await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+            return { success: true, user: authenticatedUser };
+          } else if (data.status === "error") {
+            setIsLoading(false);
+            return { success: false, error: data.message || "Invalid email or password." };
+          }
+        }
+      } catch {
+        // Backend /api/login was unreachable (e.g. hosted on Vercel) -> Fallback directly to Supabase
+      }
+
+      // Direct Supabase GoTrue Auth Fallback (production cloud authentication)
+      try {
+        const { data: supaData, error: supaError } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+
+        if (supaError) {
+          setIsLoading(false);
+          return { success: false, error: supaError.message || "Invalid email or password." };
+        }
+
+        if (supaData && (supaData.user || supaData.access_token)) {
+          const supaUser = supaData.user || (supaData.access_token ? await supabase.auth.getUser(supaData.access_token) : null);
+          const token = supaData.access_token || supaData.session?.access_token;
+          if (token) {
+            localStorage.setItem("seediq_supabase_token", token);
+          }
+
+          const username = supaUser?.user_metadata?.username || normalizedEmail.split("@")[0];
+          const displayName = supaUser?.user_metadata?.display_name || supaUser?.user_metadata?.name || username;
+          const resolvedRole: UserRole =
+            normalizedEmail === "admin@seediq.ai" || username === "admin"
+              ? "Admin"
+              : normalizedEmail === "researcher@quantum.org" || username === "researcher"
+              ? "Researcher"
+              : (supaUser?.user_metadata?.role as UserRole) || "Farmer";
+
           const authenticatedUser: User = {
-            id: backendUser.id,
-            username: backendUser.username,
-            email: backendUser.email,
-            name: backendUser.display_name || backendUser.username,
-            display_name: backendUser.display_name || backendUser.username,
-            role: backendUser.role,
-            isGuest: backendUser.role === "Guest",
-            provider: "local",
+            id: supaUser?.id || `supa_${Date.now()}`,
+            username: username,
+            email: supaUser?.email || normalizedEmail,
+            name: displayName,
+            display_name: displayName,
+            role: resolvedRole,
+            isGuest: false,
+            provider: "supabase",
           };
 
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
           setUser(authenticatedUser);
+          setIsLoading(false);
           await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
           return { success: true, user: authenticatedUser };
-        } else if (data.status === "error") {
-          // If the backend explicitly reported invalid credentials, return error
-          return { success: false, error: data.message || "Invalid email or password." };
-        }
-      }
-    } catch {
-      // Backend /api/login was unreachable (e.g. hosted on Vercel) -> Fallback directly to Supabase
-    }
-
-    // Direct Supabase GoTrue Auth Fallback (production cloud authentication)
-    try {
-      const { data: supaData, error: supaError } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password,
-      });
-
-      if (supaError) {
-        return { success: false, error: supaError.message || "Invalid email or password." };
-      }
-
-      if (supaData && (supaData.user || supaData.access_token)) {
-        const supaUser = supaData.user || (supaData.access_token ? await supabase.auth.getUser(supaData.access_token) : null);
-        const token = supaData.access_token || supaData.session?.access_token;
-        if (token) {
-          localStorage.setItem("seediq_supabase_token", token);
         }
 
-        const username = supaUser?.user_metadata?.username || normalizedEmail.split("@")[0];
-        const displayName = supaUser?.user_metadata?.display_name || supaUser?.user_metadata?.name || username;
-        const role = (supaUser?.user_metadata?.role as UserRole) || "Farmer";
-
-        const authenticatedUser: User = {
-          id: supaUser?.id || `supa_${Date.now()}`,
-          username: username,
-          email: supaUser?.email || normalizedEmail,
-          name: displayName,
-          display_name: displayName,
-          role: role,
-          isGuest: false,
-          provider: "supabase",
-        };
-
-        setUser(authenticatedUser);
-        await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
-        return { success: true, user: authenticatedUser };
+        return { success: false, error: "Invalid email or password." };
+      } catch (e: any) {
+        return { success: false, error: e?.message || "Failed to reach authentication server." };
       }
-
-      return { success: false, error: "Invalid email or password." };
-    } catch (e: any) {
-      return { success: false, error: e?.message || "Failed to reach authentication server." };
     } finally {
       setIsLoading(false);
     }

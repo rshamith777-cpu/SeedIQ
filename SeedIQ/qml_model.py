@@ -29,7 +29,9 @@ else:
         return np.zeros(2)
 
 # --- Shared Simulated Quantum Machine Learning Fallback Classes ---
-class SimulatedQuantumClassifier(BaseEstimator, ClassifierMixin):
+class SimulatedQuantumClassifier(ClassifierMixin, BaseEstimator):
+    _estimator_type = "classifier"
+
     def __init__(self, n_components=12, alpha=0.001, epochs=100):
         self.n_components = n_components
         self.alpha = alpha
@@ -62,14 +64,14 @@ class SimulatedQuantumClassifier(BaseEstimator, ClassifierMixin):
             features.append(np.cos(2.0 * projected[:, i]))
         return np.column_stack(features)
 
+    def __sklearn_is_fitted__(self):
+        return hasattr(self, "is_fitted_") and self.is_fitted_
+
     def fit(self, X, y):
         X_q = self._quantum_feature_map(X)
         self.classes_ = np.unique(y)
-        
-        print(f"    -> Training Simulated Quantum Classifier:")
         self.classifier.fit(X_q, y)
-        acc = self.classifier.score(X_q, y) * 100
-        print(f"        * Training Accuracy: {acc:.2f}%")
+        self.is_fitted_ = True
         return self
         
     def predict(self, X):
@@ -86,7 +88,9 @@ class SimulatedQuantumClassifier(BaseEstimator, ClassifierMixin):
             e_dec = np.exp(dec - np.max(dec, axis=1, keepdims=True))
             return e_dec / np.sum(e_dec, axis=1, keepdims=True)
 
-class SimulatedQuantumRegressor(BaseEstimator, RegressorMixin):
+class SimulatedQuantumRegressor(RegressorMixin, BaseEstimator):
+    _estimator_type = "regressor"
+
     def __init__(self, n_components=8, alpha=0.01, epochs=100):
         self.n_components = n_components
         self.alpha = alpha
@@ -124,13 +128,13 @@ class SimulatedQuantumRegressor(BaseEstimator, RegressorMixin):
             features.append(projected[:, i] ** 2)
         return np.column_stack(features)
         
+    def __sklearn_is_fitted__(self):
+        return hasattr(self, "is_fitted_") and self.is_fitted_
+
     def fit(self, X, y):
         X_q = self._quantum_feature_map(X)
-        
-        print(f"    -> Training Simulated Quantum Regressor:")
         self.regressor.fit(X_q, y)
-        r2 = self.regressor.score(X_q, y)
-        print(f"        * Training R2 Score: {r2:.4f}")
+        self.is_fitted_ = True
         return self
         
     def predict(self, X):

@@ -75,10 +75,18 @@ function UploadPage() {
       return;
     }
 
+    // Strict Maximum 10 MB limit
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      setFileError("File size must be 10 MB or less.");
+      return;
+    }
+
     setFile(selectedFile);
     setUploadState("idle");
 
-    // Parse the CSV to calculate real metrics
+    // Read CSV sample to calculate real metrics
+    const sampleChunk = selectedFile.slice(0, 65536);
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
@@ -93,10 +101,15 @@ function UploadPage() {
 
       const headers = lines[0].split(',');
       const features = headers.length;
-      const rows = lines.length - 1; // excluding header
+      
+      const sampleRows = Math.max(1, lines.length - 1);
+      const avgRowBytes = Math.max(1, sampleChunk.size / sampleRows);
+      const estimatedTotalRows = selectedFile.size > 65536
+        ? Math.round(selectedFile.size / avgRowBytes)
+        : sampleRows;
       
       let missingCells = 0;
-      let totalCells = rows * features;
+      let totalCells = sampleRows * features;
 
       for (let i = 1; i < lines.length; i++) {
         const cells = lines[i].split(',');
@@ -108,10 +121,10 @@ function UploadPage() {
       }
 
       const missingPct = totalCells > 0 ? (missingCells / totalCells) * 100 : 0;
-      const qualityScore = Math.max(0, Math.round(100 - (missingPct * 2))); // penalize missing values
+      const qualityScore = Math.max(0, Math.round(100 - (missingPct * 2)));
 
       const stats = {
-        rows: rows,
+        rows: estimatedTotalRows,
         features: features,
         missingPct: Math.round(missingPct * 100) / 100,
         qualityScore: qualityScore
@@ -125,15 +138,26 @@ function UploadPage() {
       setFileError("Failed to read the file. Please try again.");
       setFile(null);
     };
-    reader.readAsText(selectedFile);
+    reader.readAsText(sampleChunk);
   };
 
   const startProcessing = async (targetFile?: File | null, stats?: any) => {
     const activeFile = targetFile || file;
     const activeStats = stats || datasetStats;
     if (!activeFile || fileError) return;
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    if (activeFile.size > MAX_FILE_SIZE) {
+      setFileError("File size must be 10 MB or less.");
+      return;
+    }
     setUploadState("uploading");
     setProgress(0);
+
+    const formattedSize = activeFile.size > 1024 * 1024 * 1024
+      ? (activeFile.size / (1024 * 1024 * 1024)).toFixed(2) + " GB"
+      : activeFile.size > 1024 * 1024
+      ? (activeFile.size / (1024 * 1024)).toFixed(1) + " MB"
+      : (activeFile.size / 1024).toFixed(1) + " KB";
 
     // Save dataset entry locally so it is immediately available in the vault on live hosted sites
     const newDatasetEntry = {
@@ -146,7 +170,7 @@ function UploadPage() {
       date: new Date().toISOString().split("T")[0],
       type: "Custom Dataset",
       status: "Ready",
-      size: (activeFile.size / 1024).toFixed(1) + " KB",
+      size: formattedSize,
     };
 
     try {
@@ -158,7 +182,7 @@ function UploadPage() {
     formData.append("file", activeFile);
 
     try {
-      // Progress animation for UI
+      // Optimistic progress animation for UI
       const uploadInterval = setInterval(() => {
         setProgress(p => (p < 90 ? p + Math.floor(Math.random() * 15) + 5 : p));
       }, 120);
@@ -286,7 +310,7 @@ function UploadPage() {
                     <>
                       <h3 className="mb-2 font-display text-2xl font-semibold text-white">Drag & drop your CSV here</h3>
                       <p className="mb-6 text-sm text-emerald-100/50 max-w-sm">
-                        Only valid .csv files are supported. PDFs, ZIPs, or images will be rejected. Max size 200MB.
+                        Only valid .csv files are supported. Automatically preprocessed and synced with Supabase. Max size 10 MB.
                       </p>
                     </>
                   )}

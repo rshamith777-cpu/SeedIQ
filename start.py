@@ -14,7 +14,13 @@ def main():
     
     try:
         while True:
-            time.sleep(1)
+            time.sleep(2)
+            if backend_process.poll() is not None:
+                print("\n[start.py] Backend process exited. Auto-restarting Flask backend...")
+                backend_process = subprocess.Popen([sys.executable, "app.py"], cwd=os.path.join(os.getcwd(), "SeedIQ"))
+            if frontend_process.poll() is not None:
+                print("\n[start.py] Frontend process exited. Auto-restarting frontend dev server...")
+                frontend_process = subprocess.Popen(["npm", "run", "dev"], cwd=os.path.join(os.getcwd(), "seediq-frontend"), shell=True)
     except KeyboardInterrupt:
         print("\nStopping servers...")
         backend_process.terminate()

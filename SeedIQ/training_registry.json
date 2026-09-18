@@ -1544,5 +1544,208 @@
         },
         "output_path": "models/meta_model.pkl",
         "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-09-13 00:27:59",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data/Crop_recommendation.csv",
+        "algorithm": "RandomForest",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "class_weight": null,
+            "max_depth": 15,
+            "max_features": "sqrt",
+            "min_samples_split": 2,
+            "n_estimators": 200
+        },
+        "metrics": {
+            "accuracy": 0.9922,
+            "f1_macro": 0.9919,
+            "precision": 0.9937,
+            "recall": 0.9908
+        },
+        "output_path": "C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\SeedIQ\\models\\rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-09-13 00:45:17",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data/Crop_recommendation.csv",
+        "algorithm": "RandomForest",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "class_weight": null,
+            "max_depth": 15,
+            "max_features": "sqrt",
+            "min_samples_split": 2,
+            "n_estimators": 200
+        },
+        "metrics": {
+            "accuracy": 0.9922,
+            "f1_macro": 0.9919,
+            "precision": 0.9937,
+            "recall": 0.9908
+        },
+        "output_path": "C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\SeedIQ\\models\\rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-09-13 00:49:05",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\SeedIQ\\data\\Crop Yiled with Soil and Weather.csv",
+        "algorithm": "RandomForest",
+        "features": [
+            "Fertilizer",
+            "temp",
+            "N",
+            "P",
+            "K"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "rf__max_depth": 15,
+            "rf__min_samples_split": 2,
+            "rf__n_estimators": 200
+        },
+        "metrics": {
+            "r2": 0.9909,
+            "mae": 0.1208,
+            "rmse": 0.1844
+        },
+        "output_path": "C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\SeedIQ\\models\\xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-09-13 00:51:10",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\SeedIQ\\data\\Seed_Data.csv",
+        "algorithm": "SVM",
+        "features": [
+            "A",
+            "P",
+            "C",
+            "LK",
+            "WK",
+            "A_Coef",
+            "LKG"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "svc__C": 100,
+            "svc__gamma": "scale",
+            "svc__kernel": "linear"
+        },
+        "metrics": {
+            "accuracy": 0.9286,
+            "f1_macro": 0.9277,
+            "precision": 0.9412,
+            "recall": 0.9286
+        },
+        "output_path": "C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\SeedIQ\\models\\svm_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-09-13 01:30:05",
+        "model_name": "rf_model.pkl",
+        "dataset_path": "data/Crop_recommendation.csv",
+        "algorithm": "RandomForest",
+        "features": [
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop",
+        "hyperparameters": {
+            "class_weight": null,
+            "max_depth": 15,
+            "max_features": "sqrt",
+            "min_samples_split": 2,
+            "n_estimators": 200
+        },
+        "metrics": {
+            "accuracy": 0.9922,
+            "f1_macro": 0.9919,
+            "precision": 0.9937,
+            "recall": 0.9908
+        },
+        "output_path": "C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\SeedIQ\\models\\rf_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-09-13 01:33:50",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\SeedIQ\\data\\Crop Yiled with Soil and Weather.csv",
+        "algorithm": "RandomForest",
+        "features": [
+            "Fertilizer",
+            "temp",
+            "N",
+            "P",
+            "K"
+        ],
+        "target": "Yield_Tonnes",
+        "hyperparameters": {
+            "rf__max_depth": 15,
+            "rf__min_samples_split": 2,
+            "rf__n_estimators": 200
+        },
+        "metrics": {
+            "r2": 0.9909,
+            "mae": 0.1208,
+            "rmse": 0.1844
+        },
+        "output_path": "C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\SeedIQ\\models\\xgb_model.pkl",
+        "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-09-13 01:36:01",
+        "model_name": "svm_model.pkl",
+        "dataset_path": "C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\SeedIQ\\data\\Seed_Data.csv",
+        "algorithm": "SVM",
+        "features": [
+            "A",
+            "P",
+            "C",
+            "LK",
+            "WK",
+            "A_Coef",
+            "LKG"
+        ],
+        "target": "Viable",
+        "hyperparameters": {
+            "svc__C": 100,
+            "svc__gamma": "scale",
+            "svc__kernel": "linear"
+        },
+        "metrics": {
+            "accuracy": 0.9286,
+            "f1_macro": 0.9277,
+            "precision": 0.9412,
+            "recall": 0.9286
+        },
+        "output_path": "C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\SeedIQ\\models\\svm_model.pkl",
+        "status": "Trained & Saved"
     }
 ]

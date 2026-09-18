@@ -10,6 +10,7 @@ import io
 import json
 import hashlib
 import datetime
+from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, Tuple, Optional
@@ -25,91 +26,147 @@ from activity_logger import log_activity
 from supabase_client import supabase
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+TEMP_DIR = os.path.join(DATA_DIR, 'temp_uploads')
 os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(TEMP_DIR, exist_ok=True)
+_dataset_executor = ThreadPoolExecutor(max_workers=4)
 
-def compute_checksum(content: bytes) -> str:
+MAX_DATASET_SIZE_BYTES = 10 * 1024 * 1024  # Strict 10 MB user upload limit
+
+def compute_checksum(file_input: Any) -> str:
+    """
+    Streams file or bytes in 1MB chunks to compute SHA256 checksum with constant memory.
+    """
     sha256 = hashlib.sha256()
-    sha256.update(content)
+    if isinstance(file_input, str) and os.path.isfile(file_input):
+        with open(file_input, 'rb') as f:
+            for chunk in iter(lambda: f.read(1024 * 1024), b''):
+                sha256.update(chunk)
+    elif isinstance(file_input, (bytes, bytearray)):
+        sha256.update(file_input)
     return sha256.hexdigest()
 
-def validate_csv(file_bytes: bytes, filename: str) -> Tuple[bool, str, Optional[pd.DataFrame]]:
+class ValidationResult(tuple):
     """
-    Validates CSV file size, encoding, readability, and tabular content.
+    Backwards-compatible tuple that unpacks as (is_valid, message, sample_df)
+    while exposing .row_count and .file_size attributes for streaming pipelines.
+    """
+    def __new__(cls, is_valid, message, sample_df, row_count=0, file_size=0):
+        return super().__new__(cls, (is_valid, message, sample_df))
+
+    def __init__(self, is_valid, message, sample_df, row_count=0, file_size=0):
+        self.is_valid = is_valid
+        self.message = message
+        self.sample_df = sample_df
+        self.row_count = row_count
+        self.file_size = file_size
+
+def validate_csv(file_input: Any, filename: str, max_file_size: int = MAX_DATASET_SIZE_BYTES) -> ValidationResult:
+    """
+    Validates CSV file up to 10 MB user upload limit.
+    Returns ValidationResult tuple (is_valid, message, sample_df) with .row_count and .file_size.
     """
     if not filename.lower().endswith('.csv'):
-        return False, "File must have a .csv extension.", None
+        return ValidationResult(False, "File must have a .csv extension.", None, 0, 0)
 
-    if len(file_bytes) == 0:
-        return False, "Uploaded file is empty.", None
+    file_size = 0
+    file_path = None
+    if isinstance(file_input, str) and os.path.isfile(file_input):
+        file_path = file_input
+        file_size = os.path.getsize(file_input)
+    elif isinstance(file_input, (bytes, bytearray)):
+        file_size = len(file_input)
 
-    # Max 16MB
-    if len(file_bytes) > 16 * 1024 * 1024:
-        return False, "File exceeds maximum size limit of 16MB.", None
+    if file_size == 0:
+        return ValidationResult(False, "Uploaded file is empty.", None, 0, 0)
 
-    # Encoding & parsing check
-    df = None
-    for enc in ['utf-8', 'latin-1', 'cp1252']:
-        try:
-            df = pd.read_csv(io.BytesIO(file_bytes), encoding=enc)
+    if file_size > max_file_size:
+        return ValidationResult(False, "File size must be 10 MB or less.", None, 0, 0)
+
+    # Detect delimiter and encoding safely
+    sample_df = None
+    delimiters = [',', ';', '\t']
+    encodings = ['utf-8', 'latin-1', 'cp1252']
+
+    for enc in encodings:
+        for delim in delimiters:
+            try:
+                if file_path:
+                    sample_df = pd.read_csv(file_path, sep=delim, nrows=5000, encoding=enc)
+                else:
+                    sample_df = pd.read_csv(io.BytesIO(file_input[:min(len(file_input), 1024*1024)]), sep=delim, nrows=5000, encoding=enc)
+                if sample_df is not None and sample_df.shape[1] >= 2:
+                    break
+            except Exception:
+                continue
+        if sample_df is not None and sample_df.shape[1] >= 2:
             break
-        except Exception:
-            continue
 
-    if df is None or df.empty:
-        return False, "Unable to parse valid tabular CSV data.", None
+    if sample_df is None or sample_df.empty:
+        return ValidationResult(False, "Unable to parse valid tabular CSV data.", None, 0, 0)
 
-    if df.shape[0] < 2 or df.shape[1] < 2:
-        return False, "Dataset must contain at least 2 rows and 2 columns.", None
+    if sample_df.shape[1] < 2:
+        return ValidationResult(False, "Dataset must contain at least 2 columns.", None, 0, 0)
 
-    return True, "Valid CSV dataset.", df
+    row_count = len(sample_df)
+    return ValidationResult(True, "Valid CSV dataset.", sample_df, row_count, file_size)
 
 def get_next_dataset_version(dataset_name: str) -> str:
     """
     Queries dataset_versions in Supabase/SQLite to determine next sequential version string (v001, v002...).
     """
     count = 0
-    # Try Supabase first
     success, rows = supabase.select_rows("dataset_versions", f"dataset_name=eq.{dataset_name}&select=id")
     if success and rows:
         count = len(rows)
     else:
-        # Fallback to local SQLite
+        # Fallback to local SQLite tracking
         try:
             import sqlite3
-            conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'seediq.db'))
-            cur = conn.cursor()
-            cur.execute("SELECT COUNT(*) FROM dataset_versions WHERE dataset_name = ?", (dataset_name,))
-            res = cur.fetchone()
-            if res:
-                count = res[0]
+            conn = sqlite3.connect("seediq.db")
+            c = conn.cursor()
+            c.execute("CREATE TABLE IF NOT EXISTS dataset_versions (id INTEGER PRIMARY KEY, dataset_name TEXT, version TEXT)")
+            c.execute("SELECT COUNT(*) FROM dataset_versions WHERE dataset_name=?", (dataset_name,))
+            count = c.fetchone()[0]
             conn.close()
         except Exception:
-            pass
+            count = 0
     return f"v{count + 1:03d}"
 
 def process_and_store_dataset(
-    file_bytes: bytes,
-    filename: str,
+    file_input: Any = None,
+    filename: Optional[str] = None,
     user_id: Optional[str] = None,
     user_role: str = "Admin",
-    auth_token: Optional[str] = None
+    auth_token: Optional[str] = None,
+    max_file_size: int = MAX_DATASET_SIZE_BYTES,
+    file_bytes: Optional[bytes] = None
 ) -> Dict[str, Any]:
     """
-    Executes the complete SeedIQ Dataset Pipeline:
-    1. Validation
-    2. Schema-based detection
-    3. Supabase Storage (Original CSV)
-    4. Database Metadata Record
-    5. Automatic Preprocessing
-    6. Feature Extraction & Selection
-    7. Dataset Auditing
-    8. Supabase Storage (Processed CSV)
-    9. Versioning (v001, v002...)
-    10. Activity Logging
+    Executes the SeedIQ Complete Ingestion & Preprocessing Pipeline for <=10 MB CSV datasets:
+    1. Validation (extension, emptiness, <=10MB size limit)
+    2. Encoding & Delimiter Auto-Detection
+    3. Safe Tabular Ingestion
+    4. Statistical Detection (rows, columns, numerical, categorical, missing, duplicates, dtypes)
+    5. Missing Value Cleaning (numerical median, categorical mode)
+    6. Duplicate Record Resolution
+    7. Feature Categorical Encoding & Numerical Scaling
+    8. Original Preservation
+    9. Processed Dataset Generation
+    10. Metadata Record & Versioning
+    11. Asynchronous Supabase Storage Sync
+    12. Zero Automatic Model Retraining
     """
+    if file_input is None and file_bytes is not None:
+        file_input = file_bytes
+    if filename is None:
+        filename = "uploaded_dataset.csv"
+
     # 1. Validation
-    is_valid, val_msg, df = validate_csv(file_bytes, filename)
-    if not is_valid:
+    val_res = validate_csv(file_input, filename, max_file_size)
+    is_valid, val_msg, sample_df = val_res
+    file_size = getattr(val_res, 'file_size', 0)
+    if not is_valid or sample_df is None:
         log_activity(
             "DATASET_PROCESSING_FAILED",
             user_id=user_id,
@@ -118,12 +175,10 @@ def process_and_store_dataset(
         )
         return {"status": "error", "message": val_msg}
 
-    file_hash = compute_checksum(file_bytes)
-    row_count, col_count = df.shape
-    file_size = len(file_bytes)
+    file_hash = compute_checksum(file_input)
 
     # 2. Schema-Based Type Detection
-    detected_type = detect_dataset_type(df)
+    detected_type = detect_dataset_type(sample_df)
     type_labels = {
         'crop': "Crop Recommendation",
         'yield': "Yield Prediction",
@@ -134,18 +189,19 @@ def process_and_store_dataset(
     dataset_label = type_labels.get(detected_type, "General Agriculture CSV")
     clean_type = detected_type if detected_type in ['crop', 'yield', 'seed'] else 'other'
 
-    # 3. Storage Paths
+    # 3. Storage Paths & Original Preservation
     timestamp_slug = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     original_storage_path = f"datasets/{clean_type}/{timestamp_slug}_{file_hash[:8]}_{filename}"
     processed_storage_path = f"processed/{clean_type}/{timestamp_slug}_{file_hash[:8]}_processed.csv"
 
-    # Save original locally in SeedIQ/data/
     local_original_path = os.path.join(DATA_DIR, f"{timestamp_slug}_{filename}")
-    with open(local_original_path, 'wb') as f:
-        f.write(file_bytes)
-
-    # Upload original to Supabase Storage
-    supabase.upload_file("seediq-datasets", original_storage_path, file_bytes, content_type="text/csv", token=auth_token)
+    if isinstance(file_input, str) and os.path.isfile(file_input):
+        if os.path.abspath(file_input) != os.path.abspath(local_original_path):
+            import shutil
+            shutil.copyfile(file_input, local_original_path)
+    elif isinstance(file_input, (bytes, bytearray)):
+        with open(local_original_path, 'wb') as f:
+            f.write(file_input)
 
     log_activity(
         "DATASET_UPLOADED",
@@ -158,24 +214,60 @@ def process_and_store_dataset(
         }
     )
 
+    # 4. Safe Full Ingestion & Statistic Detection
+    df_raw = None
+    for enc in ['utf-8', 'latin-1', 'cp1252']:
+        for delim in [',', ';', '\t']:
+            try:
+                df_raw = pd.read_csv(local_original_path, sep=delim, encoding=enc)
+                if df_raw.shape[1] >= 2:
+                    break
+            except Exception:
+                continue
+        if df_raw is not None and df_raw.shape[1] >= 2:
+            break
+
+    if df_raw is None or df_raw.empty:
+        df_raw = sample_df.copy()
+
+    total_rows = len(df_raw)
+    col_count = df_raw.shape[1]
+    numeric_cols = df_raw.select_dtypes(include=[np.number]).columns.tolist()
+    categorical_cols = df_raw.select_dtypes(exclude=[np.number]).columns.tolist()
+    missing_count = int(df_raw.isnull().sum().sum())
+    duplicate_count = int(df_raw.duplicated().sum())
+
     # Target Column Identification
     target_column = None
-    cols_lower = {c.lower(): c for c in df.columns}
+    cols_lower = {c.lower(): c for c in df_raw.columns}
     if clean_type == 'crop':
         target_column = cols_lower.get('crop') or cols_lower.get('label') or 'Crop'
     elif clean_type == 'yield':
-        target_column = cols_lower.get('yield_tonnes') or cols_lower.get('yield') or df.columns[-1]
+        target_column = cols_lower.get('yield_tonnes') or cols_lower.get('yield') or df_raw.columns[-1]
     elif clean_type == 'seed':
         target_column = cols_lower.get('viable') or cols_lower.get('viability') or 'Viable'
     else:
-        target_column = df.columns[-1]
+        target_column = df_raw.columns[-1]
 
-    original_features = [c for c in df.columns if c != target_column]
+    original_features = [c for c in df_raw.columns if c != target_column]
 
-    # 4. Automated Preprocessing & Feature Extraction
+    # 5. Cleaning: Handle Duplicates and Missing Values
+    df_cleaned = df_raw.drop_duplicates()
+    for col in numeric_cols:
+        if df_cleaned[col].isnull().any():
+            median_val = df_cleaned[col].median()
+            df_cleaned[col] = df_cleaned[col].fillna(median_val if not pd.isna(median_val) else 0)
+
+    for col in categorical_cols:
+        if df_cleaned[col].isnull().any():
+            mode_s = df_cleaned[col].mode()
+            mode_val = mode_s[0] if not mode_s.empty else "Unknown"
+            df_cleaned[col] = df_cleaned[col].fillna(mode_val)
+
+    # 6. Complete Preprocessing & Transformation
     processed_features = []
     preprocessing_meta = {}
-    processed_df = df.copy()
+    local_processed_path = os.path.join(DATA_DIR, f"{timestamp_slug}_{file_hash[:8]}_processed.csv")
 
     try:
         if clean_type == 'crop':
@@ -188,14 +280,7 @@ def process_and_store_dataset(
             }
             processed_df = pd.DataFrame(X_scaled, columns=processed_features)
             processed_df['Target_Encoded'] = y
-            
-            # Also update canonical merged dataset for classical/quantum local model consumers
-            canonical_path = os.path.join(DATA_DIR, "merged_ml_dataset.csv")
-            try:
-                df.to_csv(canonical_path, index=False)
-            except Exception:
-                pass
-
+            processed_df.to_csv(local_processed_path, index=False)
         elif clean_type == 'yield':
             X_scaled, y, scaler, crop_enc, season_enc = preprocess_yield_data(local_original_path)
             processed_features = ['Crop', 'Season', 'Area_Hectares', 'Area_Sq', 'Crop_Season']
@@ -205,13 +290,7 @@ def process_and_store_dataset(
             }
             processed_df = pd.DataFrame(X_scaled, columns=processed_features)
             processed_df['Yield_Tonnes'] = list(y)
-            
-            canonical_path = os.path.join(DATA_DIR, "crop_production_karnataka.csv")
-            try:
-                df.to_csv(canonical_path, index=False)
-            except Exception:
-                pass
-
+            processed_df.to_csv(local_processed_path, index=False)
         elif clean_type == 'seed':
             X_scaled, y, scaler = preprocess_seed_data(local_original_path)
             processed_features = ['Moisture_Level', 'Weight_g']
@@ -221,36 +300,42 @@ def process_and_store_dataset(
             }
             processed_df = pd.DataFrame(X_scaled, columns=processed_features)
             processed_df['Viable'] = list(y)
-            
-            canonical_path = os.path.join(DATA_DIR, "seed_viability_data.csv")
-            try:
-                df.to_csv(canonical_path, index=False)
-            except Exception:
-                pass
+            processed_df.to_csv(local_processed_path, index=False)
         else:
-            # Generic normalization for numeric features
-            num_cols = df.select_dtypes(include=np.number).columns.tolist()
-            processed_features = num_cols
-            preprocessing_meta = {"preprocessor": "Standard numerical extraction"}
+            from sklearn.preprocessing import StandardScaler, LabelEncoder
+            processed_df = df_cleaned.copy()
+            for cat_col in categorical_cols:
+                le = LabelEncoder()
+                processed_df[cat_col] = le.fit_transform(processed_df[cat_col].astype(str))
+            
+            feat_num_cols = [c for c in numeric_cols if c != target_column]
+            if feat_num_cols:
+                scaler = StandardScaler()
+                processed_df[feat_num_cols] = scaler.fit_transform(processed_df[feat_num_cols])
+
+            processed_features = [c for c in processed_df.columns if c != target_column]
+            preprocessing_meta = {
+                "preprocessor": "StandardScaler + LabelEncoder",
+                "categorical_encoded": len(categorical_cols),
+                "numerical_scaled": len(feat_num_cols)
+            }
+            processed_df.to_csv(local_processed_path, index=False)
 
     except Exception as e:
-        print(f"[DATASET_PIPELINE] Preprocessing note: {e}")
-        preprocessing_meta = {"note": f"Fallback preprocessing: {e}"}
-
-    # Save Processed CSV locally and upload to Supabase Storage
-    local_processed_path = os.path.join(DATA_DIR, f"{timestamp_slug}_{file_hash[:8]}_processed.csv")
-    processed_df.to_csv(local_processed_path, index=False)
-    with open(local_processed_path, 'rb') as pf:
-        processed_bytes = pf.read()
-    supabase.upload_file("seediq-datasets", processed_storage_path, processed_bytes, content_type="text/csv", token=auth_token)
+        print(f"[DATASET_PIPELINE] Preprocessing notice: {e}")
+        preprocessing_meta = {"note": f"Robust fallback preprocessing: {e}"}
+        if not os.path.exists(local_processed_path):
+            df_cleaned.to_csv(local_processed_path, index=False)
+        processed_features = original_features
 
     # 5. Data Quality & Audit Checks
     quality_report = run_data_quality_checks(local_original_path, target_column)
-    missing_count = int(df.isnull().sum().sum())
-    duplicate_count = int(df.duplicated().sum())
+    missing_count = int(sample_df.isnull().sum().sum())
+    duplicate_count = int(sample_df.duplicated().sum())
 
     # 6. Versioning
     version_str = get_next_dataset_version(dataset_label)
+    row_count = total_rows
 
     # 7. Record in Supabase & SQLite
     # Master dataset entry
@@ -306,10 +391,36 @@ def process_and_store_dataset(
         }
     }
 
-    # Write to Supabase tables
-    supabase.insert_row("datasets", dataset_entry, token=auth_token)
-    supabase.insert_row("dataset_versions", version_entry, token=auth_token)
-    supabase.insert_row("dataset_audits", audit_entry, token=auth_token)
+    # 8. Asynchronously sync to Supabase Storage & PostgREST in background pool
+    def _async_supabase_dataset_sync():
+        try:
+            supabase.ensure_bucket("seediq-datasets", is_public=True, token=auth_token)
+            # Concurrently stream upload raw and processed datasets from disk
+            with ThreadPoolExecutor(max_workers=2) as uploader:
+                u1 = uploader.submit(supabase.upload_file, "seediq-datasets", original_storage_path, local_original_path, "text/csv", auth_token)
+                u2 = uploader.submit(supabase.upload_file, "seediq-datasets", processed_storage_path, local_processed_path, "text/csv", auth_token)
+                u1.result()
+                u2.result()
+            
+            # PostgREST row sync
+            supabase.insert_row("datasets", dataset_entry, token=auth_token)
+            supabase.insert_row("dataset_versions", version_entry, token=auth_token)
+            # Clean up ephemeral local copies on Render to prevent disk usage accumulation
+            if os.environ.get("RENDER"):
+                try:
+                    if os.path.exists(local_original_path):
+                        os.remove(local_original_path)
+                    if os.path.exists(local_processed_path):
+                        os.remove(local_processed_path)
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"[DATASET_PIPELINE] Asynchronous Supabase sync notice: {e}")
+
+    try:
+        _dataset_executor.submit(_async_supabase_dataset_sync)
+    except Exception as e:
+        print(f"[DATASET_PIPELINE] Background worker submit error: {e}")
 
     # Also dual-write to local SQLite so legacy viewers remain up to date
     try:
