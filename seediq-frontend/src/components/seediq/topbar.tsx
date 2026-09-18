@@ -1,4 +1,4 @@
-import { CloudSun, Bell, Info, ShieldAlert, Cpu, AlertTriangle, ArrowRight, ShieldCheck, Truck, RefreshCw, Clock, Database, Warehouse, CheckCircle2, CheckCheck, X } from "lucide-react";
+import { CloudSun, Bell, Info, ShieldAlert, Cpu, AlertTriangle, ArrowRight, ShieldCheck, Truck, RefreshCw, Clock, Database, Warehouse, CheckCircle2, CheckCheck, X, Menu } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
@@ -12,6 +12,10 @@ import {
 } from "@/lib/seed-intelligence";
 
 const CHECKED_SYNC_KEY = "seediq_last_checked_notification_sync";
+
+interface TopbarProps {
+  onOpenMobileMenu?: () => void;
+}
 
 interface DistrictNotificationItem {
   id: string;
@@ -54,7 +58,7 @@ interface StorageNotificationResponse {
   alerts?: DistrictNotificationItem[];
 }
 
-export function Topbar() {
+export function Topbar({ onOpenMobileMenu }: TopbarProps = {}) {
   const { user, guestTimeRemaining, formatGuestTime } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -258,20 +262,41 @@ export function Topbar() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-white/5 bg-black/40 backdrop-blur-xl px-6 py-3">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-white/5 bg-black/40 backdrop-blur-xl px-4 sm:px-6 py-3">
       <div className="flex items-center gap-3">
-        <span className="hidden text-xs uppercase tracking-[0.3em] text-white/50 md:inline flex items-center gap-1.5">
+        {/* Mobile Navigation Trigger & Brand for screens < lg */}
+        <div className="flex lg:hidden items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenMobileMenu}
+            className="flex items-center justify-center h-8 w-8 rounded-lg border border-white/10 bg-white/5 text-white/80 hover:text-emerald-400 hover:bg-white/10 active:scale-95 transition cursor-pointer"
+            aria-label="Open mobile menu"
+          >
+            <Menu className="h-4.5 w-4.5" />
+          </button>
+          <div className="flex items-center gap-1.5">
+            <span className="font-display text-sm font-bold text-white tracking-tight">
+              Seed<span className="text-emerald-400">IQ</span>
+            </span>
+            <span className="text-[9px] font-mono uppercase text-emerald-400/80 border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+              {user?.role || "Farmer"}
+            </span>
+          </div>
+        </div>
+
+        {/* Desktop title */}
+        <span className="hidden text-xs uppercase tracking-[0.3em] text-white/50 lg:inline flex items-center gap-1.5">
           <span className="text-emerald-400">◆</span>
           <span>SeedIQ — 5-Minute Real-Time Karnataka Seed & Crop Storage Intelligence</span>
         </span>
       </div>
 
-      <div className="flex items-center gap-3 relative">
+      <div className="flex items-center gap-2 sm:gap-3 relative">
         {/* Guest 5-Minute Warning Badge in Topbar */}
         {user?.isGuest && (
-          <div className="flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-300 font-mono shadow-[0_0_12px_rgba(245,158,11,0.2)]">
+          <div className="flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-950/40 px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs text-amber-300 font-mono shadow-[0_0_12px_rgba(245,158,11,0.2)]">
             <Clock className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
-            <span className="font-bold">Guest Preview: {formatGuestTime(guestTimeRemaining)}</span>
+            <span className="font-bold text-[11px] sm:text-xs">Guest: {formatGuestTime(guestTimeRemaining)}</span>
           </div>
         )}
 
@@ -279,7 +304,7 @@ export function Topbar() {
         <div 
           onClick={() => fetchLiveNotifications(true)}
           title="Click to sync live storage data now"
-          className="flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/40 px-3 py-1.5 text-xs font-mono text-emerald-300 cursor-pointer hover:bg-emerald-900/40 hover:border-emerald-400 transition"
+          className="flex items-center gap-1.5 sm:gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/40 px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-mono text-emerald-300 cursor-pointer hover:bg-emerald-900/40 hover:border-emerald-400 transition"
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -290,13 +315,13 @@ export function Topbar() {
           <RefreshCw className={`h-3 w-3 text-emerald-400/80 ${isSyncing ? "animate-spin" : ""}`} />
         </div>
 
-        <div className="hidden lg:flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-3 py-1.5 text-xs text-white">
+        <div className="hidden xl:flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-3 py-1.5 text-xs text-white">
           <CloudSun className="h-3.5 w-3.5 text-emerald-400" />
           <span className="font-medium">27°C</span>
           <span className="text-white/50">Karnataka Agro-Net</span>
         </div>
 
-        <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs">
+        <div className="hidden md:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_hsl(150_70%_45%)]" />
           <span className="font-medium text-emerald-400">STORAGE AI</span>
           <span className="text-emerald-400/60">ONLINE</span>

@@ -15,6 +15,7 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import socket
+import requests
 
 # Optimize network DNS on Windows to avoid 10-second IPv6 fallback delays
 try:

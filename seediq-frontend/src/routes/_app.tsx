@@ -1,8 +1,9 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { AppSidebar } from "@/components/seediq/app-sidebar";
 import { Topbar } from "@/components/seediq/topbar";
+import { MobileNavigation } from "@/components/seediq/mobile-nav";
 import { InteractiveBackground } from "@/components/seediq/interactive-background";
 import { Atom, ShieldAlert } from "lucide-react";
 
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/_app")({
 function AppLayout() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -55,14 +57,25 @@ function AppLayout() {
     <div className="relative flex min-h-screen w-full bg-[#020B06] text-foreground font-sans">
       <InteractiveBackground />
 
+      {/* Desktop Sidebar (visible on lg screens) */}
       <AppSidebar />
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <Topbar />
-        <main className="flex-1 p-6 md:p-10">
+        {/* Topbar with mobile hamburger toggle */}
+        <Topbar onOpenMobileMenu={() => setMobileMenuOpen(true)} />
+        
+        {/* Main Content with bottom padding on mobile to clear bottom taskbar */}
+        <main className="flex-1 p-4 sm:p-6 md:p-10 pb-24 lg:pb-10">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile Fixed Bottom Taskbar & Slide-over Drawer for phones (< lg) */}
+      <MobileNavigation
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        onToggle={() => setMobileMenuOpen((prev) => !prev)}
+      />
     </div>
   );
 }
