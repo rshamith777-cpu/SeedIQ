@@ -15,32 +15,31 @@ function AppLayout() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    setIsMounted(true);
+  }, []);
+
+  // Synchronously resolve authenticated user from memory or localStorage for 0ms page transitions
+  const activeUser = user || (typeof window !== "undefined" ? (() => {
+    try {
+      const saved = localStorage.getItem("seediq_auth_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  })() : null);
+
+  useEffect(() => {
+    // Only redirect if client is fully mounted and truly has no session in memory or storage
+    if (isMounted && !activeUser && !isLoading) {
       navigate({ to: "/login" });
     }
-  }, [user, isLoading, navigate]);
+  }, [isMounted, activeUser, isLoading, navigate]);
 
-  // Loading state while checking authentication credentials
-  if (isLoading && !user) {
-    return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#020B06] text-white p-6">
-        <div className="flex flex-col items-center gap-4 max-w-sm text-center">
-          <div className="h-14 w-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 grid place-items-center text-emerald-400 animate-pulse shadow-[0_0_30px_rgba(16,185,129,0.3)]">
-            <Atom className="h-7 w-7 animate-spin" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="font-display font-semibold text-white text-base">Verifying SeedIQ Session</h3>
-            <p className="text-xs font-mono text-emerald-400/80">Checking security credentials & permissions...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // If not logged in, block content rendering while redirecting
-  if (!user) {
+  // If client is mounted and has no active session, render clean redirect screen without artificial stall
+  if (isMounted && !activeUser) {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#020B06] text-white p-6">
         <div className="flex flex-col items-center gap-3 text-center">

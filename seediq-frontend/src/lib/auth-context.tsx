@@ -73,7 +73,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await fetch("/api/me");
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2500);
+        const res = await fetch("/api/me", { signal: controller.signal });
+        clearTimeout(timeoutId);
         if (res.ok) {
           const data = await res.json();
           if (data.authenticated && data.user) {
@@ -570,43 +573,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 8. Logout with Full Purge & Animation
+  // 8. Instant Logout with Zero Latency
   const logout = async () => {
-    // 1. Show Logged Out Animation
-    setAuthTransition({
-      type: "logout",
-      message: "Purging session credentials, security tokens, and local cache...",
-    });
-
-    // 2. Clear Supabase cloud session
-    const supaToken = localStorage.getItem("seediq_supabase_token");
-    if (supaToken) {
-      try {
-        await supabase.auth.signOut(supaToken);
-      } catch {
-        // ignore
-      }
-      localStorage.removeItem("seediq_supabase_token");
-    }
-
-    // 3. Clear backend session
-    try {
-      await fetch("/api/logout", { method: "POST" });
-    } catch {
-      // ignore
-    }
-
-    // 4. Complete Client Purge
+    // 1. Immediately clear user state & local storage in 0ms
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(GUEST_EXPIRY_KEY);
-    sessionStorage.clear();
     setGuestTimeRemaining(null);
-
-    // 5. Hold animation for smooth transition then redirect
-    await new Promise((res) => setTimeout(res, 1200));
     setAuthTransition({ type: null, message: "" });
 
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(GUEST_EXPIRY_KEY);
+      localStorage.removeItem("seediq_supabase_token");
+      sessionStorage.clear();
+    }
+
+    // 2. Fire and forget remote sessions in the background without blocking UI
+    try {
+      supabase.auth.signOut().catch(() => {});
+      fetch("/api/logout", { method: "POST" }).catch(() => {});
+    } catch {}
+
+    // 3. Instant navigation to login
     if (typeof window !== "undefined") {
       window.location.href = "/login";
     }
