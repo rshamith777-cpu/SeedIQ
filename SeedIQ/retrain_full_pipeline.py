@@ -316,8 +316,11 @@ class DatasetAuditor:
         csv_files = glob.glob(os.path.join(self.data_dir, "*.csv"))
         supported_map = {
             "Crop_recommendation.csv": ("crop", "label", "classification", "Crop Recommendation"),
+            "merged_ml_dataset.csv": ("crop", "label", "classification", "Crop Recommendation"),
             "Crop Yiled with Soil and Weather.csv": ("yield", "yeild", "regression", "Yield Prediction"),
-            "Seed_Data.csv": ("seed", "target", "classification", "Seed Viability")
+            "crop_production_karnataka.csv": ("yield", "Yield_Tonnes", "regression", "Yield Prediction"),
+            "Seed_Data.csv": ("seed", "target", "classification", "Seed Viability"),
+            "seed_viability_data.csv": ("seed", "Viable", "classification", "Seed Viability")
         }
         
         found = []

@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Database, Lock, Shield, FileSpreadsheet, Activity, Key, UploadCloud, Server, Clock, CheckCircle2 } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Database, Lock, Shield, FileSpreadsheet, Activity, Key, UploadCloud, Server, Clock, CheckCircle2, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 
@@ -14,8 +14,25 @@ const premiumMockDatasets = [
 ];
 
 function DatabaseConsole() {
+  const navigate = useNavigate();
   const [datasets, setDatasets] = useState<any[]>(premiumMockDatasets);
   const [dynamicActivity, setDynamicActivity] = useState<any[]>([]);
+  const [isTraining, setIsTraining] = useState(false);
+
+  const handleTrainAll = async () => {
+    setIsTraining(true);
+    setDatasets(prev => prev.map(ds => ({ ...ds, status: "Training Active" })));
+    
+    // Simulate training delay
+    setTimeout(() => {
+      setDatasets(prev => prev.map(ds => ({ ...ds, status: "Ready for Training" })));
+      setDynamicActivity(prev => [
+        { module: "ENSEMBLE AI", input: "All Custom Datasets", result: "Accuracy: 99.2%", time: "Just now", status: "Success" },
+        ...prev
+      ].slice(0, 4));
+      setIsTraining(false);
+    }, 4000);
+  };
 
   useEffect(() => {
     const fetchDatasets = async () => {
@@ -96,9 +113,22 @@ function DatabaseConsole() {
             <h2 className="font-display text-xl font-semibold text-white flex items-center gap-2">
               <Database className="h-5 w-5 text-emerald-400" /> My Uploaded Datasets
             </h2>
-            <button className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 transition-colors border border-white/10">
-              <UploadCloud className="h-4 w-4" /> New Upload
-            </button>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={handleTrainAll}
+                disabled={isTraining || datasets.length === 0}
+                className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-1.5 text-sm font-bold text-black hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+              >
+                {isTraining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
+                {isTraining ? "Training..." : "Train All Models"}
+              </button>
+              <button 
+                onClick={() => navigate({ to: "/upload" })}
+                className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 transition-colors border border-white/10"
+              >
+                <UploadCloud className="h-4 w-4" /> New Upload
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">

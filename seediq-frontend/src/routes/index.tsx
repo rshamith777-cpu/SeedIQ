@@ -167,7 +167,19 @@ function DynamicAtmosphere() {
 function SeedIQHomepage() {
   const { user, logout } = useAuth();
   const targetRoute = user ? "/dashboard" : "/login";
-  const [showIntroVideo, setShowIntroVideo] = useState(true);
+  const [showIntroVideo, setShowIntroVideo] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("seedIqIntroSeen") !== "true";
+    }
+    return true;
+  });
+
+  const handleCloseIntro = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("seedIqIntroSeen", "true");
+    }
+    setShowIntroVideo(false);
+  };
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedDistrictId, setSelectedDistrictId] = useState<string>("Mandya");
   const [activeCircuitQubit, setActiveCircuitQubit] = useState<number>(0);
@@ -221,7 +233,7 @@ function SeedIQHomepage() {
               autoPlay
               muted
               playsInline
-              onEnded={() => setShowIntroVideo(false)}
+              onEnded={handleCloseIntro}
               className="absolute inset-0 h-full w-full object-cover opacity-90"
             >
               <source src="/intro_plant.mp4" type="video/mp4" />
@@ -247,7 +259,7 @@ function SeedIQHomepage() {
 
             {/* Skip Intro CTA Button */}
             <button
-              onClick={() => setShowIntroVideo(false)}
+              onClick={handleCloseIntro}
               className="absolute bottom-8 right-8 z-10 flex items-center gap-2 px-5 py-2.5 rounded-full bg-black/60 hover:bg-emerald-500 hover:text-black border border-white/20 text-xs font-mono font-bold text-white uppercase tracking-widest backdrop-blur-xl transition-all hover:scale-105 shadow-[0_0_30px_rgba(0,0,0,0.8)] cursor-pointer"
             >
               <span>SKIP INTRO</span>
