@@ -9,8 +9,6 @@ datasets/
 ├── Train Dataset.csv                       # Consolidated training dataset
 ├── Test Dataset.csv                        # Consolidated testing dataset
 ├── README.md                               # Dataset inventory & documentation
-├── test/
-│   └── Test Dataset.csv                    # Evaluation test partition
 └── train/                                  # Complete training and model data collection
     ├── Train Dataset.csv                   # Main multi-feature training dataset
     ├── Crop_recommendation.csv             # Crop Recommendation dataset
