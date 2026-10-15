@@ -68,3 +68,4 @@ SeedIQ/data/2026*
 SeedIQ/data/*_processed.csv
 /data/
 *.tmp
+housing.csv
