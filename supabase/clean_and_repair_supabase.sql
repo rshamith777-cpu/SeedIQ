@@ -7,8 +7,7 @@
 -- 1. UNBLOCK ALL REGISTERED USERS (Instantly marks all emails as confirmed)
 -- This eliminates the "Email not confirmed" error when signing in!
 UPDATE auth.users
-SET email_confirmed_at = NOW(),
-    confirmed_at = NOW()
+SET email_confirmed_at = NOW()
 WHERE email_confirmed_at IS NULL;
 
 -- 2. FIX 42P17 INFINITE RECURSION IN PROFILES TABLE RLS POLICIES
