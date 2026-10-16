@@ -22,7 +22,7 @@ interface AuthContextType {
   guestTimeRemaining: number | null; // in seconds (300s = 5 mins max)
   formatGuestTime: (seconds: number | null) => string;
   signIn: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>;
-  requestRegistrationOtp: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  requestRegistrationOtp: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string; error?: string; auto_verified?: boolean }>;
   verifyRegistrationOtp: (email: string, otp: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   requestPasswordResetOtp: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   verifyPasswordResetOtp: (email: string, otp: string) => Promise<{ success: boolean; message?: string; error?: string }>;
@@ -409,8 +409,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (res.ok && bData.status === "success") {
+          if (bData.auto_verified && bData.user) {
+            const authenticatedUser: User = {
+              id: String(bData.user.id),
+              username: bData.user.username || trimmedEmail.split("@")[0],
+              email: bData.user.email || trimmedEmail,
+              name: bData.user.display_name || trimmedName,
+              display_name: bData.user.display_name || trimmedName,
+              role: (bData.user.role as UserRole) || "Farmer",
+              isGuest: false,
+              provider: "email",
+            };
+            setUser(authenticatedUser);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
+            await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+            return {
+              success: true,
+              auto_verified: true,
+              message: bData.message || `Account created successfully for ${trimmedEmail}!`,
+            };
+          }
           return {
             success: true,
+            auto_verified: false,
             message: bData.message || `Verification code sent to ${trimmedEmail}. Please check your inbox and spam folder.`,
           };
         } else if (bData && bData.message) {

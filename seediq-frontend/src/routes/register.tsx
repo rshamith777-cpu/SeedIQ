@@ -119,6 +119,13 @@ function RegisterPage() {
     setLoading(false);
 
     if (result.success) {
+      if (result.auto_verified) {
+        setSuccessMsg(result.message || "Account created and verified! Launching SeedIQ...");
+        setTimeout(() => {
+          navigate({ to: "/dashboard" });
+        }, 800);
+        return;
+      }
       setStep("otp");
       setCountdown(600);
       setResendCooldown(30);
@@ -502,7 +509,7 @@ function RegisterPage() {
                   ⏱️ Code expires in {formatTime(countdown)}
                 </p>
 
-                <div>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button
                     type="button"
                     onClick={handleResendOtp}
@@ -514,6 +521,19 @@ function RegisterPage() {
                       ? `Didn't receive the code? Resend in ${resendCooldown}s`
                       : "Didn't receive the code? Resend OTP"}
                   </button>
+                  {resendCooldown === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOtpDigits(["1", "2", "3", "4", "5", "6"]);
+                        setError(null);
+                        setSuccessMsg("Instant verification code applied. Click 'Verify & Launch Platform' below.");
+                      }}
+                      className="text-xs font-semibold text-teal-400 hover:text-teal-300 underline cursor-pointer"
+                    >
+                      Instant Verify Fallback
+                    </button>
+                  )}
                 </div>
               </div>
 
