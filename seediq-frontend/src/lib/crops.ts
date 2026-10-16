@@ -1,191 +1,12 @@
 // Master crop definitions and image asset mapping
-export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; storageImage?: string }> = {
-  "almond": {
-    "name": "Almond",
-    "slug": "almond",
-    "cropImage": "/crops/almond/crop.webp",
-    "storageImage": "/crops/almond/storage.webp"
-  },
-  "areacnut": {
-    "name": "Areacnut",
-    "slug": "areacnut",
-    "cropImage": "/crops/areacnut/crop.webp",
-    "storageImage": "/crops/areacnut/storage.webp"
-  },
-  "beetroot": {
-    "name": "Beetroot",
-    "slug": "beetroot",
-    "cropImage": "/crops/beetroot/crop.jpg",
-    "storageImage": "/crops/beetroot/storage.webp"
-  },
-  "bitter-gourd": {
-    "name": "Bitter Gourd",
-    "slug": "bitter-gourd",
-    "cropImage": "/crops/bitter-gourd/crop.jpg",
-    "storageImage": "/crops/bitter-gourd/storage.webp"
-  },
-  "bottle-guard": {
-    "name": "Bottle Guard",
-    "slug": "bottle-guard",
-    "cropImage": "/crops/bottle-guard/crop.webp",
-    "storageImage": "/crops/bottle-guard/storage.jpg"
-  },
-  "brinjal": {
-    "name": "Brinjal",
-    "slug": "brinjal",
-    "cropImage": "/crops/brinjal/crop.webp",
-    "storageImage": "/crops/brinjal/storage.webp"
-  },
-  "broccoli": {
-    "name": "Broccoli",
-    "slug": "broccoli",
-    "cropImage": "/crops/broccoli/crop.webp",
-    "storageImage": "/crops/broccoli/storage.webp"
-  },
-  "cabbage": {
-    "name": "Cabbage",
-    "slug": "cabbage",
-    "cropImage": "/crops/cabbage/crop.jpg",
-    "storageImage": "/crops/cabbage/storage.jpg"
-  },
-  "carrot": {
-    "name": "Carrot",
-    "slug": "carrot",
-    "cropImage": "/crops/carrot/crop.avif",
-    "storageImage": "/crops/carrot/storage.jpg"
-  },
-  "cashew": {
-    "name": "Cashew",
-    "slug": "cashew",
-    "cropImage": "/crops/cashew/crop.jpg",
-    "storageImage": "/crops/cashew/storage.avif"
-  },
-  "cauliflower": {
-    "name": "Cauliflower",
-    "slug": "cauliflower",
-    "cropImage": "/crops/cauliflower/crop.webp",
-    "storageImage": "/crops/cauliflower/storage.webp"
-  },
-  "coconut": {
-    "name": "Coconut",
-    "slug": "coconut",
-    "cropImage": "/crops/coconut/crop.webp",
-    "storageImage": "/crops/coconut/storage.webp"
-  },
-  "cucumber": {
-    "name": "Cucumber",
-    "slug": "cucumber",
-    "cropImage": "/crops/cucumber/crop.webp",
-    "storageImage": "/crops/cucumber/storage.jpg"
-  },
-  "dragon-fruit": {
-    "name": "Dragon Fruit",
-    "slug": "dragon-fruit",
-    "cropImage": "/crops/dragon-fruit/crop.webp",
-    "storageImage": "/crops/dragon-fruit/storage.png"
-  },
-  "garlic": {
-    "name": "Garlic",
-    "slug": "garlic",
-    "cropImage": "/crops/garlic/crop.jpg",
-    "storageImage": "/crops/garlic/storage.jpeg"
-  },
-  "grapes": {
-    "name": "Grapes",
-    "slug": "grapes",
-    "cropImage": "/crops/grapes/crop.webp",
-    "storageImage": "/crops/grapes/storage.webp"
-  },
-  "ivy-gourd": {
-    "name": "Ivy Gourd",
-    "slug": "ivy-gourd",
-    "cropImage": "/crops/ivy-gourd/crop.jpg",
-    "storageImage": "/crops/ivy-gourd/storage.jpg"
-  },
-  "lettuce": {
-    "name": "Lettuce",
-    "slug": "lettuce",
-    "cropImage": "/crops/lettuce/crop.webp",
-    "storageImage": "/crops/lettuce/storage.webp"
-  },
-  "muskmelon": {
-    "name": "Muskmelon",
-    "slug": "muskmelon",
-    "cropImage": "/crops/muskmelon/crop.avif",
-    "storageImage": "/crops/muskmelon/storage.webp"
-  },
-  "okra": {
-    "name": "Okra",
-    "slug": "okra",
-    "cropImage": "/crops/okra/crop.jpg",
-    "storageImage": "/crops/okra/storage.jpeg"
-  },
-  "onion": {
-    "name": "Onion",
-    "slug": "onion",
-    "cropImage": "/crops/onion/crop.webp",
-    "storageImage": "/crops/onion/storage.webp"
-  },
-  "pistachio": {
-    "name": "Pistachio",
-    "slug": "pistachio",
-    "cropImage": "/crops/pistachio/crop.webp",
-    "storageImage": "/crops/pistachio/storage.webp"
-  },
-  "potato": {
-    "name": "Potato",
-    "slug": "potato",
-    "cropImage": "/crops/potato/crop.webp",
-    "storageImage": "/crops/potato/storage.jpg"
-  },
-  "pumpkin": {
-    "name": "Pumpkin",
-    "slug": "pumpkin",
-    "cropImage": "/crops/pumpkin/crop.webp",
-    "storageImage": "/crops/pumpkin/storage.webp"
-  },
-  "ridge-gourd": {
-    "name": "Ridge Gourd",
-    "slug": "ridge-gourd",
-    "cropImage": "/crops/ridge-gourd/crop.webp",
-    "storageImage": "/crops/ridge-gourd/storage.webp"
-  },
-  "snake-gourd": {
-    "name": "Snake Gourd",
-    "slug": "snake-gourd",
-    "cropImage": "/crops/snake-gourd/crop.webp",
-    "storageImage": "/crops/snake-gourd/storage.webp"
-  },
-  "spinach": {
-    "name": "Spinach",
-    "slug": "spinach",
-    "cropImage": "/crops/spinach/crop.webp",
-    "storageImage": "/crops/spinach/storage.jpg"
-  },
-  "strawberry": {
-    "name": "Strawberry",
-    "slug": "strawberry",
-    "cropImage": "/crops/strawberry/crop.jpeg",
-    "storageImage": "/crops/strawberry/storage.jpg"
-  },
-  "tomato": {
-    "name": "Tomato",
-    "slug": "tomato",
-    "cropImage": "/crops/tomato/crop.webp",
-    "storageImage": "/crops/tomato/storage.jpg"
-  },
-  "walnut": {
-    "name": "Walnut",
-    "slug": "walnut",
-    "cropImage": "/crops/walnut/crop.jpg",
-    "storageImage": "/crops/walnut/storage.webp"
-  },
-  "watermelon": {
-    "name": "Watermelon",
-    "slug": "watermelon",
-    "cropImage": "/crops/watermelon/crop.webp",
-    "storageImage": "/crops/watermelon/storage.png"
-  },
+export interface CropAsset {
+  name: string;
+  slug: string;
+  cropImage?: string;
+  storageImage?: string;
+}
+
+export const CROP_ASSETS: Record<string, CropAsset> = {
   "abaca": {
     "name": "Abaca",
     "slug": "abaca",
@@ -197,6 +18,12 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "slug": "alfalfa",
     "cropImage": "/crops/alfalfa/crop.webp",
     "storageImage": "/crops/alfalfa/storage.webp"
+  },
+  "almond": {
+    "name": "Almond",
+    "slug": "almond",
+    "cropImage": "/crops/almond/crop.webp",
+    "storageImage": "/crops/almond/storage.webp"
   },
   "amaranth": {
     "name": "Amaranth",
@@ -210,6 +37,36 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/apple/crop.webp",
     "storageImage": "/crops/apple/storage.webp"
   },
+  "areacnut": {
+    "name": "Areacnut",
+    "slug": "areacnut",
+    "cropImage": "/crops/areacnut/crop.webp",
+    "storageImage": "/crops/areacnut/storage.webp"
+  },
+  "artichoke": {
+    "name": "Artichoke",
+    "slug": "artichoke",
+    "cropImage": "/crops/artichoke/crop.webp",
+    "storageImage": "/crops/artichoke/storage.webp"
+  },
+  "ash-gourd": {
+    "name": "Ash Gourd",
+    "slug": "ash-gourd",
+    "cropImage": "/crops/ash-gourd/crop.webp",
+    "storageImage": "/crops/ash-gourd/storage.webp"
+  },
+  "asparagus": {
+    "name": "Asparagus",
+    "slug": "asparagus",
+    "cropImage": "/crops/asparagus/crop.webp",
+    "storageImage": "/crops/asparagus/storage.webp"
+  },
+  "aspargus": {
+    "name": "Aspargus",
+    "slug": "aspargus",
+    "cropImage": "/crops/aspargus/crop.webp",
+    "storageImage": "/crops/aspargus/storage.webp"
+  },
   "banana": {
     "name": "Banana",
     "slug": "banana",
@@ -219,14 +76,32 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
   "barley": {
     "name": "Barley",
     "slug": "barley",
-    "cropImage": "/crops/barley/crop.jpg",
+    "cropImage": "/crops/barley/crop.webp",
     "storageImage": "/crops/barley/storage.webp"
   },
   "barnyard-millet": {
     "name": "Barnyard Millet",
     "slug": "barnyard-millet",
     "cropImage": "/crops/barnyard-millet/crop.webp",
-    "storageImage": "/crops/barnyard-millet/storage.jpg"
+    "storageImage": "/crops/barnyard-millet/storage.webp"
+  },
+  "beetroot": {
+    "name": "Beetroot",
+    "slug": "beetroot",
+    "cropImage": "/crops/beetroot/crop.webp",
+    "storageImage": "/crops/beetroot/storage.webp"
+  },
+  "bermuda-grass": {
+    "name": "Bermuda Grass",
+    "slug": "bermuda-grass",
+    "cropImage": "/crops/bermuda-grass/crop.webp",
+    "storageImage": "/crops/bermuda-grass/storage.webp"
+  },
+  "bitter-gourd": {
+    "name": "Bitter Gourd",
+    "slug": "bitter-gourd",
+    "cropImage": "/crops/bitter-gourd/crop.webp",
+    "storageImage": "/crops/bitter-gourd/storage.webp"
   },
   "black-gram": {
     "name": "Black Gram",
@@ -234,25 +109,130 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/black-gram/crop.webp",
     "storageImage": "/crops/black-gram/storage.webp"
   },
+  "black-pepper": {
+    "name": "Black Pepper",
+    "slug": "black-pepper",
+    "cropImage": "/crops/black-pepper/crop.webp",
+    "storageImage": "/crops/black-pepper/storage.webp"
+  },
+  "blackberry": {
+    "name": "Blackberry",
+    "slug": "blackberry",
+    "cropImage": "/crops/blackberry/crop.webp",
+    "storageImage": "/crops/blackberry/storage.webp"
+  },
+  "blueberry": {
+    "name": "Blueberry",
+    "slug": "blueberry",
+    "cropImage": "/crops/blueberry/crop.webp",
+    "storageImage": "/crops/blueberry/storage.webp"
+  },
+  "bottle-guard": {
+    "name": "Bottle Guard",
+    "slug": "bottle-guard",
+    "cropImage": "/crops/bottle-guard/crop.webp",
+    "storageImage": "/crops/bottle-guard/storage.webp"
+  },
+  "brinjal": {
+    "name": "Brinjal",
+    "slug": "brinjal",
+    "cropImage": "/crops/brinjal/crop.webp",
+    "storageImage": "/crops/brinjal/storage.webp"
+  },
+  "broccoli": {
+    "name": "Broccoli",
+    "slug": "broccoli",
+    "cropImage": "/crops/broccoli/crop.webp",
+    "storageImage": "/crops/broccoli/storage.webp"
+  },
+  "brome": {
+    "name": "Brome",
+    "slug": "brome",
+    "cropImage": "/crops/brome/crop.webp",
+    "storageImage": "/crops/brome/storage.webp"
+  },
+  "brussels-sprouts": {
+    "name": "Brussels Sprouts",
+    "slug": "brussels-sprouts",
+    "cropImage": "/crops/brussels-sprouts/crop.webp",
+    "storageImage": "/crops/brussels-sprouts/storage.webp"
+  },
   "buckwheat": {
     "name": "Buckwheat",
     "slug": "buckwheat",
     "cropImage": "/crops/buckwheat/crop.webp",
     "storageImage": "/crops/buckwheat/storage.webp"
   },
+  "cabbage": {
+    "name": "Cabbage",
+    "slug": "cabbage",
+    "cropImage": "/crops/cabbage/crop.webp",
+    "storageImage": "/crops/cabbage/storage.webp"
+  },
   "canary-seed": {
     "name": "Canary Seed",
     "slug": "canary-seed",
-    "cropImage": "/crops/canary-seed/crop.webp"
+    "cropImage": "/crops/canary-seed/crop.webp",
+    "storageImage": "/crops/canary-seed/storage.webp"
+  },
+  "capsicum": {
+    "name": "Capsicum",
+    "slug": "capsicum",
+    "cropImage": "/crops/capsicum/crop.webp",
+    "storageImage": "/crops/capsicum/storage.webp"
+  },
+  "cardamom": {
+    "name": "Cardamom",
+    "slug": "cardamom",
+    "cropImage": "/crops/cardamom/crop.webp",
+    "storageImage": "/crops/cardamom/storage.webp"
+  },
+  "carrot": {
+    "name": "Carrot",
+    "slug": "carrot",
+    "cropImage": "/crops/carrot/crop.webp",
+    "storageImage": "/crops/carrot/storage.webp"
+  },
+  "cashew": {
+    "name": "Cashew",
+    "slug": "cashew",
+    "cropImage": "/crops/cashew/crop.webp",
+    "storageImage": "/crops/cashew/storage.webp"
+  },
+  "cassava": {
+    "name": "Cassava",
+    "slug": "cassava",
+    "cropImage": "/crops/cassava/crop.webp",
+    "storageImage": "/crops/cassava/storage.webp"
   },
   "castor": {
     "name": "Castor",
     "slug": "castor",
-    "cropImage": "/crops/castor/crop.webp"
+    "cropImage": "/crops/castor/crop.webp",
+    "storageImage": "/crops/castor/storage.webp"
+  },
+  "cauliflower": {
+    "name": "Cauliflower",
+    "slug": "cauliflower",
+    "cropImage": "/crops/cauliflower/crop.webp",
+    "storageImage": "/crops/cauliflower/storage.webp"
+  },
+  "celery": {
+    "name": "Celery",
+    "slug": "celery",
+    "cropImage": "/crops/celery/crop.webp",
+    "storageImage": "/crops/celery/storage.webp"
+  },
+  "cherry": {
+    "name": "Cherry",
+    "slug": "cherry",
+    "cropImage": "/crops/cherry/crop.webp",
+    "storageImage": "/crops/cherry/storage.webp"
   },
   "chia": {
     "name": "Chia",
     "slug": "chia",
+    "cropImage": null,
     "storageImage": "/crops/chia/storage.webp"
   },
   "chickpea": {
@@ -261,11 +241,65 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/chickpea/crop.webp",
     "storageImage": "/crops/chickpea/storage.webp"
   },
+  "chili": {
+    "name": "Chili",
+    "slug": "chili",
+    "cropImage": "/crops/chili/crop.webp",
+    "storageImage": "/crops/chili/storage.webp"
+  },
+  "chilli": {
+    "name": "Chilli",
+    "slug": "chilli",
+    "cropImage": "/crops/chilli/crop.webp",
+    "storageImage": "/crops/chilli/storage.webp"
+  },
+  "cinnamon": {
+    "name": "Cinnamon",
+    "slug": "cinnamon",
+    "cropImage": "/crops/cinnamon/crop.webp",
+    "storageImage": "/crops/cinnamon/storage.webp"
+  },
+  "clove": {
+    "name": "Clove",
+    "slug": "clove",
+    "cropImage": "/crops/clove/crop.webp",
+    "storageImage": "/crops/clove/storage.webp"
+  },
+  "clover": {
+    "name": "Clover",
+    "slug": "clover",
+    "cropImage": "/crops/clover/crop.webp",
+    "storageImage": "/crops/clover/storage.webp"
+  },
   "cluster-bean": {
     "name": "Cluster Bean",
     "slug": "cluster-bean",
     "cropImage": "/crops/cluster-bean/crop.webp",
     "storageImage": "/crops/cluster-bean/storage.webp"
+  },
+  "cocoa": {
+    "name": "Cocoa",
+    "slug": "cocoa",
+    "cropImage": "/crops/cocoa/crop.webp",
+    "storageImage": "/crops/cocoa/storage.webp"
+  },
+  "coconut": {
+    "name": "Coconut",
+    "slug": "coconut",
+    "cropImage": "/crops/coconut/crop.webp",
+    "storageImage": "/crops/coconut/storage.webp"
+  },
+  "coffee": {
+    "name": "Coffee",
+    "slug": "coffee",
+    "cropImage": "/crops/coffee/crop.webp",
+    "storageImage": "/crops/coffee/storage.webp"
+  },
+  "coriander": {
+    "name": "Coriander",
+    "slug": "coriander",
+    "cropImage": "/crops/coriander/crop.webp",
+    "storageImage": "/crops/coriander/storage.webp"
   },
   "cotton": {
     "name": "Cotton",
@@ -279,21 +313,71 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/cow-pea/crop.webp",
     "storageImage": "/crops/cow-pea/storage.webp"
   },
+  "cowpea": {
+    "name": "Cowpea",
+    "slug": "cowpea",
+    "cropImage": "/crops/cowpea/crop.webp",
+    "storageImage": "/crops/cowpea/storage.webp"
+  },
+  "cucumber": {
+    "name": "Cucumber",
+    "slug": "cucumber",
+    "cropImage": "/crops/cucumber/crop.webp",
+    "storageImage": "/crops/cucumber/storage.webp"
+  },
+  "cumin": {
+    "name": "Cumin",
+    "slug": "cumin",
+    "cropImage": "/crops/cumin/crop.webp",
+    "storageImage": "/crops/cumin/storage.webp"
+  },
+  "dragon-fruit": {
+    "name": "Dragon Fruit",
+    "slug": "dragon-fruit",
+    "cropImage": "/crops/dragon-fruit/crop.webp",
+    "storageImage": "/crops/dragon-fruit/storage.webp"
+  },
   "durum-wheat": {
     "name": "Durum Wheat",
     "slug": "durum-wheat",
+    "cropImage": null,
     "storageImage": "/crops/durum-wheat/storage.webp"
+  },
+  "faba-bean": {
+    "name": "Faba Bean",
+    "slug": "faba-bean",
+    "cropImage": "/crops/faba-bean/crop.webp",
+    "storageImage": "/crops/faba-bean/storage.webp"
+  },
+  "fennel": {
+    "name": "Fennel",
+    "slug": "fennel",
+    "cropImage": "/crops/fennel/crop.webp",
+    "storageImage": "/crops/fennel/storage.webp"
+  },
+  "fenugreek": {
+    "name": "Fenugreek",
+    "slug": "fenugreek",
+    "cropImage": "/crops/fenugreek/crop.webp",
+    "storageImage": "/crops/fenugreek/storage.webp"
+  },
+  "fescue": {
+    "name": "Fescue",
+    "slug": "fescue",
+    "cropImage": "/crops/fescue/crop.webp",
+    "storageImage": "/crops/fescue/storage.webp"
   },
   "field-pea": {
     "name": "Field Pea",
     "slug": "field-pea",
-    "cropImage": "/crops/field-pea/crop.webp"
+    "cropImage": "/crops/field-pea/crop.webp",
+    "storageImage": "/crops/field-pea/storage.webp"
   },
   "finger-millet(ragi)": {
     "name": "Finger Millet(Ragi)",
     "slug": "finger-millet(ragi)",
     "cropImage": "/crops/finger-millet(ragi)/crop.webp",
-    "storageImage": "/crops/finger-millet(ragi)/storage.png"
+    "storageImage": "/crops/finger-millet(ragi)/storage.webp"
   },
   "flaxseed": {
     "name": "Flaxseed",
@@ -304,14 +388,14 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
   "fonio": {
     "name": "Fonio",
     "slug": "fonio",
-    "cropImage": "/crops/fonio/crop.jpg",
+    "cropImage": "/crops/fonio/crop.webp",
     "storageImage": "/crops/fonio/storage.webp"
   },
   "foxtail-millet": {
     "name": "Foxtail Millet",
     "slug": "foxtail-millet",
-    "storageImage": "/crops/foxtail-millet/storage.webp",
-    "cropImage": "/crops/foxtail-millet/crop.png"
+    "cropImage": "/crops/foxtail-millet/crop.webp",
+    "storageImage": "/crops/foxtail-millet/storage.webp"
   },
   "freekeh": {
     "name": "Freekeh",
@@ -322,12 +406,32 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
   "french-bean": {
     "name": "French Bean",
     "slug": "french-bean",
-    "cropImage": "/crops/french-bean/crop.webp"
+    "cropImage": "/crops/french-bean/crop.webp",
+    "storageImage": "/crops/french-bean/storage.webp"
+  },
+  "garlic": {
+    "name": "Garlic",
+    "slug": "garlic",
+    "cropImage": "/crops/garlic/crop.webp",
+    "storageImage": "/crops/garlic/storage.webp"
+  },
+  "ginger": {
+    "name": "Ginger",
+    "slug": "ginger",
+    "cropImage": "/crops/ginger/crop.webp",
+    "storageImage": "/crops/ginger/storage.webp"
+  },
+  "grapes": {
+    "name": "Grapes",
+    "slug": "grapes",
+    "cropImage": "/crops/grapes/crop.webp",
+    "storageImage": "/crops/grapes/storage.webp"
   },
   "green-gram": {
     "name": "Green Gram",
     "slug": "green-gram",
-    "cropImage": "/crops/green-gram/crop.webp"
+    "cropImage": "/crops/green-gram/crop.webp",
+    "storageImage": "/crops/green-gram/storage.webp"
   },
   "groundnut": {
     "name": "Groundnut",
@@ -341,10 +445,16 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/guava/crop.webp",
     "storageImage": "/crops/guava/storage.webp"
   },
+  "hazelnut": {
+    "name": "Hazelnut",
+    "slug": "hazelnut",
+    "cropImage": "/crops/hazelnut/crop.webp",
+    "storageImage": "/crops/hazelnut/storage.webp"
+  },
   "hemp": {
     "name": "Hemp",
     "slug": "hemp",
-    "cropImage": "/crops/hemp/crop.jpg",
+    "cropImage": "/crops/hemp/crop.webp",
     "storageImage": "/crops/hemp/storage.webp"
   },
   "hemp-seed": {
@@ -359,17 +469,29 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/horse-gram/crop.webp",
     "storageImage": "/crops/horse-gram/storage.webp"
   },
+  "ivy-gourd": {
+    "name": "Ivy Gourd",
+    "slug": "ivy-gourd",
+    "cropImage": "/crops/ivy-gourd/crop.webp",
+    "storageImage": "/crops/ivy-gourd/storage.webp"
+  },
   "jobs-tears": {
     "name": "Jobs Tears",
     "slug": "jobs-tears",
     "cropImage": "/crops/jobs-tears/crop.webp",
-    "storageImage": "/crops/jobs-tears/storage.jpg"
+    "storageImage": "/crops/jobs-tears/storage.webp"
   },
   "jute": {
     "name": "Jute",
     "slug": "jute",
     "cropImage": "/crops/jute/crop.webp",
     "storageImage": "/crops/jute/storage.webp"
+  },
+  "kale": {
+    "name": "Kale",
+    "slug": "kale",
+    "cropImage": "/crops/kale/crop.webp",
+    "storageImage": "/crops/kale/storage.webp"
   },
   "kenaf": {
     "name": "Kenaf",
@@ -386,7 +508,14 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
   "kodo-millet": {
     "name": "Kodo Millet",
     "slug": "kodo-millet",
-    "cropImage": "/crops/kodo-millet/crop.jpg"
+    "cropImage": "/crops/kodo-millet/crop.webp",
+    "storageImage": "/crops/kodo-millet/storage.webp"
+  },
+  "kohlrabi": {
+    "name": "Kohlrabi",
+    "slug": "kohlrabi",
+    "cropImage": "/crops/kohlrabi/crop.webp",
+    "storageImage": "/crops/kohlrabi/storage.webp"
   },
   "lemon": {
     "name": "Lemon",
@@ -397,29 +526,44 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
   "lentil": {
     "name": "Lentil",
     "slug": "lentil",
-    "cropImage": "/crops/lentil/crop.jpg",
+    "cropImage": "/crops/lentil/crop.webp",
     "storageImage": "/crops/lentil/storage.webp"
+  },
+  "lettuce": {
+    "name": "Lettuce",
+    "slug": "lettuce",
+    "cropImage": "/crops/lettuce/crop.webp",
+    "storageImage": "/crops/lettuce/storage.webp"
   },
   "linseed": {
     "name": "Linseed",
     "slug": "linseed",
+    "cropImage": "/crops/linseed/crop.webp",
     "storageImage": "/crops/linseed/storage.webp"
   },
   "little-millet": {
     "name": "Little Millet",
     "slug": "little-millet",
     "cropImage": "/crops/little-millet/crop.webp",
-    "storageImage": "/crops/little-millet/storage.jpg"
+    "storageImage": "/crops/little-millet/storage.webp"
   },
   "lupin": {
     "name": "Lupin",
     "slug": "lupin",
-    "cropImage": "/crops/lupin/crop.webp"
+    "cropImage": "/crops/lupin/crop.webp",
+    "storageImage": "/crops/lupin/storage.webp"
+  },
+  "macadamia": {
+    "name": "Macadamia",
+    "slug": "macadamia",
+    "cropImage": "/crops/macadamia/crop.webp",
+    "storageImage": "/crops/macadamia/storage.webp"
   },
   "maize(corn)": {
     "name": "Maize(Corn)",
     "slug": "maize(corn)",
-    "cropImage": "/crops/maize(corn)/crop.jpg"
+    "cropImage": "/crops/maize(corn)/crop.webp",
+    "storageImage": "/crops/maize(corn)/storage.webp"
   },
   "mango": {
     "name": "Mango",
@@ -442,6 +586,7 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
   "moth-bean": {
     "name": "Moth Bean",
     "slug": "moth-bean",
+    "cropImage": "/crops/moth-bean/crop.webp",
     "storageImage": "/crops/moth-bean/storage.webp"
   },
   "mung-bean": {
@@ -450,10 +595,16 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/mung-bean/crop.webp",
     "storageImage": "/crops/mung-bean/storage.webp"
   },
+  "muskmelon": {
+    "name": "Muskmelon",
+    "slug": "muskmelon",
+    "cropImage": "/crops/muskmelon/crop.webp",
+    "storageImage": "/crops/muskmelon/storage.webp"
+  },
   "mustard": {
     "name": "Mustard",
     "slug": "mustard",
-    "cropImage": "/crops/mustard/crop.jpg",
+    "cropImage": "/crops/mustard/crop.webp",
     "storageImage": "/crops/mustard/storage.webp"
   },
   "niger-seed": {
@@ -462,11 +613,41 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/niger-seed/crop.webp",
     "storageImage": "/crops/niger-seed/storage.webp"
   },
+  "nutmeg": {
+    "name": "Nutmeg",
+    "slug": "nutmeg",
+    "cropImage": "/crops/nutmeg/crop.webp",
+    "storageImage": "/crops/nutmeg/storage.webp"
+  },
   "oats": {
     "name": "Oats",
     "slug": "oats",
-    "cropImage": "/crops/oats/crop.jpeg",
+    "cropImage": "/crops/oats/crop.webp",
     "storageImage": "/crops/oats/storage.webp"
+  },
+  "oil-palm": {
+    "name": "Oil Palm",
+    "slug": "oil-palm",
+    "cropImage": "/crops/oil-palm/crop.webp",
+    "storageImage": "/crops/oil-palm/storage.webp"
+  },
+  "okra": {
+    "name": "Okra",
+    "slug": "okra",
+    "cropImage": "/crops/okra/crop.webp",
+    "storageImage": "/crops/okra/storage.webp"
+  },
+  "olive": {
+    "name": "Olive",
+    "slug": "olive",
+    "cropImage": "/crops/olive/crop.webp",
+    "storageImage": "/crops/olive/storage.webp"
+  },
+  "onion": {
+    "name": "Onion",
+    "slug": "onion",
+    "cropImage": "/crops/onion/crop.webp",
+    "storageImage": "/crops/onion/storage.webp"
   },
   "orange": {
     "name": "Orange",
@@ -480,10 +661,16 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/papaya/crop.webp",
     "storageImage": "/crops/papaya/storage.webp"
   },
+  "peach": {
+    "name": "Peach",
+    "slug": "peach",
+    "cropImage": "/crops/peach/crop.webp",
+    "storageImage": "/crops/peach/storage.webp"
+  },
   "pearl-millet(bajra)": {
     "name": "Pearl Millet(Bajra)",
     "slug": "pearl-millet(bajra)",
-    "cropImage": "/crops/pearl-millet(bajra)/crop.jpg",
+    "cropImage": "/crops/pearl-millet(bajra)/crop.webp",
     "storageImage": "/crops/pearl-millet(bajra)/storage.webp"
   },
   "peas": {
@@ -492,11 +679,23 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/peas/crop.webp",
     "storageImage": "/crops/peas/storage.webp"
   },
+  "pecan": {
+    "name": "Pecan",
+    "slug": "pecan",
+    "cropImage": "/crops/pecan/crop.webp",
+    "storageImage": "/crops/pecan/storage.webp"
+  },
   "piegon-pea": {
     "name": "Piegon Pea",
     "slug": "piegon-pea",
     "cropImage": "/crops/piegon-pea/crop.webp",
     "storageImage": "/crops/piegon-pea/storage.webp"
+  },
+  "pigeon-pea": {
+    "name": "Pigeon Pea",
+    "slug": "pigeon-pea",
+    "cropImage": "/crops/pigeon-pea/crop.webp",
+    "storageImage": "/crops/pigeon-pea/storage.webp"
   },
   "pineapple": {
     "name": "Pineapple",
@@ -504,23 +703,53 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/pineapple/crop.webp",
     "storageImage": "/crops/pineapple/storage.webp"
   },
+  "pistachio": {
+    "name": "Pistachio",
+    "slug": "pistachio",
+    "cropImage": "/crops/pistachio/crop.webp",
+    "storageImage": "/crops/pistachio/storage.webp"
+  },
+  "plum": {
+    "name": "Plum",
+    "slug": "plum",
+    "cropImage": "/crops/plum/crop.webp",
+    "storageImage": "/crops/plum/storage.webp"
+  },
   "pomegranate": {
     "name": "Pomegranate",
     "slug": "pomegranate",
     "cropImage": "/crops/pomegranate/crop.webp",
     "storageImage": "/crops/pomegranate/storage.webp"
   },
+  "potato": {
+    "name": "Potato",
+    "slug": "potato",
+    "cropImage": "/crops/potato/crop.webp",
+    "storageImage": "/crops/potato/storage.webp"
+  },
   "proso-millet": {
     "name": "Proso Millet",
     "slug": "proso-millet",
-    "cropImage": "/crops/proso-millet/crop.jpg",
+    "cropImage": "/crops/proso-millet/crop.webp",
     "storageImage": "/crops/proso-millet/storage.webp"
+  },
+  "pumpkin": {
+    "name": "Pumpkin",
+    "slug": "pumpkin",
+    "cropImage": "/crops/pumpkin/crop.webp",
+    "storageImage": "/crops/pumpkin/storage.webp"
   },
   "quinoa": {
     "name": "Quinoa",
     "slug": "quinoa",
-    "cropImage": "/crops/quinoa/crop.jpg",
+    "cropImage": "/crops/quinoa/crop.webp",
     "storageImage": "/crops/quinoa/storage.webp"
+  },
+  "radish": {
+    "name": "Radish",
+    "slug": "radish",
+    "cropImage": "/crops/radish/crop.webp",
+    "storageImage": "/crops/radish/storage.webp"
   },
   "ramie": {
     "name": "Ramie",
@@ -528,11 +757,29 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/ramie/crop.webp",
     "storageImage": "/crops/ramie/storage.webp"
   },
+  "raspberry": {
+    "name": "Raspberry",
+    "slug": "raspberry",
+    "cropImage": "/crops/raspberry/crop.webp",
+    "storageImage": "/crops/raspberry/storage.webp"
+  },
   "rice": {
     "name": "Rice",
     "slug": "rice",
-    "cropImage": "/crops/rice/crop.jpg",
+    "cropImage": "/crops/rice/crop.webp",
     "storageImage": "/crops/rice/storage.webp"
+  },
+  "ridge-gourd": {
+    "name": "Ridge Gourd",
+    "slug": "ridge-gourd",
+    "cropImage": "/crops/ridge-gourd/crop.webp",
+    "storageImage": "/crops/ridge-gourd/storage.webp"
+  },
+  "rubber": {
+    "name": "Rubber",
+    "slug": "rubber",
+    "cropImage": "/crops/rubber/crop.webp",
+    "storageImage": "/crops/rubber/storage.webp"
   },
   "rye": {
     "name": "Rye",
@@ -546,16 +793,34 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/safflower/crop.webp",
     "storageImage": "/crops/safflower/storage.webp"
   },
+  "saffron": {
+    "name": "Saffron",
+    "slug": "saffron",
+    "cropImage": "/crops/saffron/crop.webp",
+    "storageImage": "/crops/saffron/storage.webp"
+  },
   "sesame": {
     "name": "Sesame",
     "slug": "sesame",
     "cropImage": "/crops/sesame/crop.webp",
     "storageImage": "/crops/sesame/storage.webp"
   },
+  "shallot": {
+    "name": "Shallot",
+    "slug": "shallot",
+    "cropImage": "/crops/shallot/crop.webp",
+    "storageImage": "/crops/shallot/storage.webp"
+  },
+  "snake-gourd": {
+    "name": "Snake Gourd",
+    "slug": "snake-gourd",
+    "cropImage": "/crops/snake-gourd/crop.webp",
+    "storageImage": "/crops/snake-gourd/storage.webp"
+  },
   "sorghum": {
     "name": "Sorghum",
     "slug": "sorghum",
-    "cropImage": "/crops/sorghum/crop.jpg",
+    "cropImage": "/crops/sorghum/crop.webp",
     "storageImage": "/crops/sorghum/storage.webp"
   },
   "soyabean": {
@@ -570,9 +835,40 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/spelt/crop.webp",
     "storageImage": "/crops/spelt/storage.webp"
   },
+  "spinach": {
+    "name": "Spinach",
+    "slug": "spinach",
+    "cropImage": "/crops/spinach/crop.webp",
+    "storageImage": "/crops/spinach/storage.webp"
+  },
+  "sponge-gourd": {
+    "name": "Sponge Gourd",
+    "slug": "sponge-gourd",
+    "cropImage": "/crops/sponge-gourd/crop.webp",
+    "storageImage": "/crops/sponge-gourd/storage.webp"
+  },
+  "sponge-guard": {
+    "name": "Sponge Guard",
+    "slug": "sponge-guard",
+    "cropImage": "/crops/sponge-guard/crop.webp",
+    "storageImage": "/crops/sponge-guard/storage.webp"
+  },
+  "squash": {
+    "name": "Squash",
+    "slug": "squash",
+    "cropImage": "/crops/squash/crop.webp",
+    "storageImage": "/crops/squash/storage.webp"
+  },
+  "strawberry": {
+    "name": "Strawberry",
+    "slug": "strawberry",
+    "cropImage": "/crops/strawberry/crop.webp",
+    "storageImage": "/crops/strawberry/storage.webp"
+  },
   "sugar-beet": {
     "name": "Sugar Beet",
     "slug": "sugar-beet",
+    "cropImage": null,
     "storageImage": "/crops/sugar-beet/storage.webp"
   },
   "sugarcane": {
@@ -593,11 +889,41 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/sunn-hemp/crop.webp",
     "storageImage": "/crops/sunn-hemp/storage.webp"
   },
+  "sweet-potato": {
+    "name": "Sweet Potato",
+    "slug": "sweet-potato",
+    "cropImage": "/crops/sweet-potato/crop.webp",
+    "storageImage": "/crops/sweet-potato/storage.webp"
+  },
+  "tea": {
+    "name": "Tea",
+    "slug": "tea",
+    "cropImage": "/crops/tea/crop.webp",
+    "storageImage": "/crops/tea/storage.webp"
+  },
   "teff": {
     "name": "Teff",
     "slug": "teff",
     "cropImage": "/crops/teff/crop.webp",
-    "storageImage": "/crops/teff/storage.jpg"
+    "storageImage": "/crops/teff/storage.webp"
+  },
+  "timothy-grass": {
+    "name": "Timothy Grass",
+    "slug": "timothy-grass",
+    "cropImage": "/crops/timothy-grass/crop.webp",
+    "storageImage": "/crops/timothy-grass/storage.webp"
+  },
+  "tobacco": {
+    "name": "Tobacco",
+    "slug": "tobacco",
+    "cropImage": "/crops/tobacco/crop.webp",
+    "storageImage": "/crops/tobacco/storage.webp"
+  },
+  "tomato": {
+    "name": "Tomato",
+    "slug": "tomato",
+    "cropImage": "/crops/tomato/crop.webp",
+    "storageImage": "/crops/tomato/storage.webp"
   },
   "triticale": {
     "name": "Triticale",
@@ -605,17 +931,89 @@ export const CROP_ASSETS: Record<string, { name: string; cropImage?: string; sto
     "cropImage": "/crops/triticale/crop.webp",
     "storageImage": "/crops/triticale/storage.webp"
   },
+  "turmeric": {
+    "name": "Turmeric",
+    "slug": "turmeric",
+    "cropImage": "/crops/turmeric/crop.webp",
+    "storageImage": "/crops/turmeric/storage.webp"
+  },
+  "turnip": {
+    "name": "Turnip",
+    "slug": "turnip",
+    "cropImage": "/crops/turnip/crop.webp",
+    "storageImage": "/crops/turnip/storage.webp"
+  },
+  "vanilla": {
+    "name": "Vanilla",
+    "slug": "vanilla",
+    "cropImage": "/crops/vanilla/crop.webp",
+    "storageImage": "/crops/vanilla/storage.webp"
+  },
   "velvet-bean": {
     "name": "Velvet Bean",
     "slug": "velvet-bean",
     "cropImage": "/crops/velvet-bean/crop.webp",
     "storageImage": "/crops/velvet-bean/storage.webp"
   },
+  "vetch": {
+    "name": "Vetch",
+    "slug": "vetch",
+    "cropImage": "/crops/vetch/crop.webp",
+    "storageImage": "/crops/vetch/storage.webp"
+  },
+  "walnut": {
+    "name": "Walnut",
+    "slug": "walnut",
+    "cropImage": "/crops/walnut/crop.webp",
+    "storageImage": "/crops/walnut/storage.webp"
+  },
+  "watermelon": {
+    "name": "Watermelon",
+    "slug": "watermelon",
+    "cropImage": "/crops/watermelon/crop.webp",
+    "storageImage": "/crops/watermelon/storage.webp"
+  },
   "wheat": {
     "name": "Wheat",
     "slug": "wheat",
-    "cropImage": "/crops/wheat/crop.jpg",
+    "cropImage": "/crops/wheat/crop.webp",
     "storageImage": "/crops/wheat/storage.webp"
+  },
+  "yam": {
+    "name": "Yam",
+    "slug": "yam",
+    "cropImage": "/crops/yam/crop.webp",
+    "storageImage": "/crops/yam/storage.webp"
+  },
+  "zucchini": {
+    "name": "Zucchini",
+    "slug": "zucchini",
+    "cropImage": "/crops/zucchini/crop.webp",
+    "storageImage": "/crops/zucchini/storage.webp"
+  },
+  "leek": {
+    "name": "Leek",
+    "slug": "leek",
+    "cropImage": "/crops/leek/crop.webp",
+    "storageImage": "/crops/leek/storage.webp"
+  },
+  "taro": {
+    "name": "Taro",
+    "slug": "taro",
+    "cropImage": "/crops/taro/crop.webp",
+    "storageImage": "/crops/taro/storage.webp"
+  },
+  "canola": {
+    "name": "Canola",
+    "slug": "canola",
+    "cropImage": "/crops/canola/crop.webp",
+    "storageImage": "/crops/canola/storage.webp"
+  },
+  "soybean": {
+    "name": "Soybean",
+    "slug": "soybean",
+    "cropImage": "/crops/soybean/crop.webp",
+    "storageImage": "/crops/soybean/storage.webp"
   }
 };
 
@@ -629,7 +1027,7 @@ export const CROP_VARIETIES = [
   "Clover", "Timothy Grass", "Bermuda Grass", "Ryegrass", "Fescue", "Brome", "Vetch",
   "Potato", "Sweet Potato", "Cassava", "Yam", "Taro", "Beetroot", "Turnip", "Radish",
   "Carrot", "Onion", "Garlic", "Leek", "Shallot", "Tomato", "Eggplant", "Capsicum",
-  "Chili", "Cucumber", "Pumpkin", "Squash", "Zucchini", "Watermelon", "Muskmelon",
+  "Chili", "Chilli", "Cucumber", "Pumpkin", "Squash", "Zucchini", "Watermelon", "Muskmelon",
   "Bitter Gourd", "Bottle Gourd", "Ridge Gourd", "Sponge Gourd", "Ash Gourd", "Snake Gourd",
   "Cabbage", "Cauliflower", "Broccoli", "Brussels Sprouts", "Kohlrabi", "Kale", "Spinach",
   "Lettuce", "Celery", "Asparagus", "Artichoke", "Apple", "Banana", "Orange",
@@ -651,27 +1049,41 @@ function normalizeKey(name: string): string {
     .replace(/_+/g, "-");
 }
 
-export function getCropAsset(cropName: string): { name: string; cropImage?: string; storageImage?: string } | null {
+export function getCropAsset(cropName: string): CropAsset | null {
   if (!cropName) return null;
   const key = normalizeKey(cropName);
   
   if (CROP_ASSETS[key]) return CROP_ASSETS[key];
   
-  // Fuzzy match
+  // Specific alias mappings
+  if (key.includes("areca") || key.includes("arecanut")) return CROP_ASSETS["areacnut"] || null;
+  if (key.includes("bottle")) return CROP_ASSETS["bottle-guard"] || null;
+  if (key.includes("sponge")) return CROP_ASSETS["sponge-guard"] || CROP_ASSETS["sponge-gourd"] || null;
+  if (key.includes("ash") && key.includes("gourd")) return CROP_ASSETS["ash-gourd"] || null;
+  if (key.includes("brinjal") || key.includes("eggplant")) return CROP_ASSETS["brinjal"] || null;
+  if (key.includes("paddy") || key.includes("rice")) return CROP_ASSETS["rice"] || null;
+  if (key.includes("corn") || key.includes("maize")) return CROP_ASSETS["maize(corn)"] || CROP_ASSETS["maize"] || null;
+  if (key.includes("chilli") || key.includes("chili")) return CROP_ASSETS["chilli"] || CROP_ASSETS["chili"] || null;
+  if (key.includes("tur") || key.includes("pigeon")) return CROP_ASSETS["pigeon-pea"] || CROP_ASSETS["piegon-pea"] || null;
+  if (key.includes("cowpea") || key.includes("cow-pea")) return CROP_ASSETS["cowpea"] || CROP_ASSETS["cow-pea"] || null;
+  if (key.includes("moth") && key.includes("bean")) return CROP_ASSETS["moth-bean"] || null;
+  if (key.includes("faba") && key.includes("bean")) return CROP_ASSETS["faba-bean"] || null;
+  if (key.includes("oil") && key.includes("palm")) return CROP_ASSETS["oil-palm"] || null;
+  if (key.includes("sweet") && key.includes("potato")) return CROP_ASSETS["sweet-potato"] || null;
+  if (key.includes("aspar")) return CROP_ASSETS["asparagus"] || CROP_ASSETS["aspargus"] || null;
+  if (key.includes("brussel")) return CROP_ASSETS["brussels-sprouts"] || null;
+  if (key.includes("black") && key.includes("pepper")) return CROP_ASSETS["black-pepper"] || null;
+  if (key.includes("kidney")) return CROP_ASSETS["kidney-bean"] || null;
+  if (key.includes("mung")) return CROP_ASSETS["mung-bean"] || null;
+  if (key.includes("black") && (key.includes("gram") || key === "blackgram")) return CROP_ASSETS["black-gram"] || null;
+  if (key.includes("piegon") || key.includes("pigeon")) return CROP_ASSETS["pigeon-pea"] || null;
+
+  // Partial match fallback
   for (const [k, val] of Object.entries(CROP_ASSETS)) {
     if (key.includes(k) || k.includes(key)) {
       return val;
     }
   }
-  
-  // Specific alias mappings
-  if (key.includes("areca") || key.includes("arecanut")) return CROP_ASSETS["areacnut"] || null;
-  if (key.includes("bottle")) return CROP_ASSETS["bottle-guard"] || null;
-  if (key.includes("brinjal") || key.includes("eggplant")) return CROP_ASSETS["brinjal"] || null;
-  if (key.includes("paddy") || key.includes("rice")) return CROP_ASSETS["rice"] || null;
-  if (key.includes("corn") || key.includes("maize")) return CROP_ASSETS["maize"] || null;
-  if (key.includes("chilli") || key.includes("chili")) return CROP_ASSETS["chili"] || null;
-  if (key.includes("tur") || key.includes("pigeon")) return CROP_ASSETS["pigeon-pea"] || null;
   
   return null;
 }

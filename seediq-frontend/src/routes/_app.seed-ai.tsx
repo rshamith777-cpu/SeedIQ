@@ -40,7 +40,7 @@ function SeedAI() {
       const res = await fetch("/api/seed-viability", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ crop, moisture, weight })
+        body: JSON.stringify({ crop, moisture, weight, storageTemp, storageHum })
       });
       if (res.status === 401) {
         throw new Error("You are not logged in or your session has expired.");
@@ -54,7 +54,8 @@ function SeedAI() {
       if (data.error) {
         throw new Error(data.error);
       }
-      setResultData(data);
+      const resObj = data.result || data;
+      setResultData({ ...data, ...resObj });
       setShowResult(true);
       setTimeout(() => {
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -67,8 +68,7 @@ function SeedAI() {
     }
   };
 
-  // Basic viability logic for demonstration (assuming wheat ideal: moist<12, weight>40, temp<20, hum<50)
-  const isOptimal = resultData?.ensemble === "Viable" || (moisture <= 12 && weight >= 40 && storageTemp <= 20 && storageHum <= 50);
+  const isOptimal = (resultData?.ensemble === "Viable") || (resultData?.result?.ensemble === "Viable") || (resultData ? false : (moisture <= 12 && weight >= 40 && storageTemp <= 20 && storageHum <= 50));
 
   const seedReportData: ReportData = {
     title: "Seed Lot Physiological Viability & Germination Certificate",
@@ -398,13 +398,13 @@ function SeedAI() {
             {/* SEED IMAGE OVERVIEW & DOWNLOAD */}
             <div className="flex flex-col md:flex-row gap-8 items-center justify-between border-t border-emerald-900/40 pt-10">
               <div className="flex items-center gap-6">
-                <div className="h-24 w-24 rounded-full overflow-hidden border-2 border-emerald-500/30 shadow-[0_0_30px_-5px_hsl(155_70%_45%/0.4)]">
-                  <img src={seedImg} alt="Crop Seed" className="h-full w-full object-cover" />
+                <div className="h-24 w-24 rounded-2xl overflow-hidden border-2 border-emerald-500/30 shadow-[0_0_30px_-5px_hsl(155_70%_45%/0.4)] bg-black">
+                  <img src={getCropImage(crop) || seedImg} alt={`${crop} Seed`} className="h-full w-full object-cover" />
                 </div>
                 <div>
                   <div className="text-xs uppercase tracking-widest text-emerald-500/60 mb-1">Target Sample</div>
-                  <div className="font-display text-2xl font-semibold text-white">{crop} Seed</div>
-                  <div className="text-sm text-emerald-300">Batch Analysis Complete</div>
+                  <div className="font-display text-2xl font-semibold text-white">{crop} Seed Lot</div>
+                  <div className="text-sm text-emerald-300">Viability Batch Analysis: {isOptimal ? "Viable" : "Declining"}</div>
                 </div>
               </div>
               

@@ -532,6 +532,15 @@ function RegisterPage() {
                   </>
                 )}
               </button>
+
+              <div className="text-center pt-2">
+                <p className="text-xs text-emerald-300/70">
+                  Received a Supabase email confirmation link instead?{" "}
+                  <Link to="/login" className="text-emerald-400 underline font-medium hover:text-emerald-300">
+                    Click here to Sign In
+                  </Link>
+                </p>
+              </div>
             </form>
           )}
 

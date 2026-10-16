@@ -113,6 +113,83 @@ export const supabase = {
         return null;
       }
     },
+
+    /**
+     * Verify email OTP or recovery token via Supabase GoTrue
+     */
+    async verifyOtp({
+      email,
+      token,
+      type = "signup",
+    }: {
+      email: string;
+      token: string;
+      type?: "signup" | "recovery" | "email";
+    }) {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+          method: "POST",
+          headers: defaultHeaders(),
+          body: JSON.stringify({
+            email: email.trim().toLowerCase(),
+            token: token.trim(),
+            type,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const errMsg = data.error_description || data.msg || data.message || "Invalid or expired verification code.";
+          return { data: null, error: new Error(errMsg) };
+        }
+        return { data, error: null };
+      } catch (err: any) {
+        return { data: null, error: err };
+      }
+    },
+
+    /**
+     * Send password recovery email via Supabase GoTrue
+     */
+    async resetPasswordForEmail(email: string) {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+          method: "POST",
+          headers: defaultHeaders(),
+          body: JSON.stringify({
+            email: email.trim().toLowerCase(),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const errMsg = data.error_description || data.msg || data.message || "Failed to dispatch recovery email.";
+          return { data: null, error: new Error(errMsg) };
+        }
+        return { data, error: null };
+      } catch (err: any) {
+        return { data: null, error: err };
+      }
+    },
+
+    /**
+     * Update user credentials (e.g. password) via Supabase
+     */
+    async updateUser(token: string, attributes: { password?: string; data?: Record<string, any> }) {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+          method: "PUT",
+          headers: defaultHeaders(token),
+          body: JSON.stringify(attributes),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const errMsg = data.error_description || data.msg || data.message || "Failed to update user.";
+          return { data: null, error: new Error(errMsg) };
+        }
+        return { data, error: null };
+      } catch (err: any) {
+        return { data: null, error: err };
+      }
+    },
   },
 
   /**

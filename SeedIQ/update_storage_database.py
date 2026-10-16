@@ -1,0 +1,889 @@
+import json
+import os
+
+STORAGE_KNOWLEDGE_BASE = {
+  "Rice": {
+    "temp": "12–15°C",
+    "hum": "60–65%",
+    "pres": "Store in hermetic silos or multi-layer sealed bags. Keep moisture below 12%. Aerate periodically to purge moisture hotspots.",
+    "shelf_life": "12–18 months",
+    "fungus": "Aspergillus flavus, Penicillium islandicum",
+    "insects": "Rice Weevil (Sitophilus oryzae), Lesser Grain Borer",
+    "risk_score": 15,
+    "type": "Hermetic Grain Silo with Aeration"
+  },
+  "Wheat": {
+    "temp": "15–18°C",
+    "hum": "50–60%",
+    "pres": "Hermetic silo or flat dry warehouse. Pre-clean to remove broken grains and chaff; ensure grain moisture < 11.5%.",
+    "shelf_life": "18–24 months",
+    "fungus": "Fusarium head blight, Aspergillus glaucus",
+    "insects": "Granary Weevil (Sitophilus granarius), Sawtoothed Grain Beetle",
+    "risk_score": 10,
+    "type": "Hermetic Grain Silo"
+  },
+  "Maize": {
+    "temp": "10–14°C",
+    "hum": "50–55%",
+    "pres": "Forced-air drying to 13% moisture immediately after harvest. Aerated steel bins to prevent dangerous aflatoxin spikes.",
+    "shelf_life": "12–15 months",
+    "fungus": "Aspergillus flavus (Aflatoxin), Gibberella ear rot",
+    "insects": "Maize Weevil, Angoumois Grain Moth",
+    "risk_score": 25,
+    "type": "Aerated Metal Grain Silo"
+  },
+  "Cotton": {
+    "temp": "18–22°C",
+    "hum": "55–62%",
+    "pres": "Baled lint stored on raised wooden dunnage with fire sprinklers and strict humidity control to prevent fiber mildew.",
+    "shelf_life": "24–36 months",
+    "fungus": "Aspergillus niger (Black mildew on lint)",
+    "insects": "Pink Bollworm residual, Warehouse Carpet Beetle",
+    "risk_score": 15,
+    "type": "Dry Bale Warehouse"
+  },
+  "Sugarcane": {
+    "temp": "10–14°C",
+    "hum": "85–90%",
+    "pres": "Crush within 24–48 hours of harvest. In transit storage, mist stalks and shade to halt sucrose inversion into reducing sugars.",
+    "shelf_life": "1–2 weeks",
+    "fungus": "Red rot (Colletotrichum falcatum), Ceratocystis paradoxa",
+    "insects": "Stem Borer larvae, Scale insects",
+    "risk_score": 80,
+    "type": "Controlled Atmosphere Storage"
+  },
+  "Linseed": {
+    "temp": "10–15°C",
+    "hum": "<55%",
+    "pres": "Dry to 7–9% moisture. Aerate silo continuously during the first 30 days to dissipate respiration heat and prevent rancidity.",
+    "shelf_life": "12–18 months",
+    "fungus": "Alternaria linicola, Fusarium oxysporum",
+    "insects": "Rust-Red Flour Beetle, Sawtoothed Grain Beetle",
+    "risk_score": 20,
+    "type": "Climate-Controlled Oilseed Silo"
+  },
+  "Olive": {
+    "temp": "5–8°C",
+    "hum": "85–90%",
+    "pres": "Shallow ventilated plastic lugs (max 20 kg per lug) to prevent fruit crushing. Cold press within 24–48 hours.",
+    "shelf_life": "1–2 weeks (Fruit) / 24 months (Bulk Oil)",
+    "fungus": "Anthracnose (Colletotrichum acutatum), Botrytis cinerea",
+    "insects": "Olive Fruit Fly (Bactrocera oleae)",
+    "risk_score": 65,
+    "type": "Pre-Milling Ventilated Produce Storage"
+  },
+  "Oil Palm": {
+    "temp": "20–25°C",
+    "hum": "60–70%",
+    "pres": "Process Fresh Fruit Bunches (FFB) within 24 hours. Bruised fruits trigger rapid enzymatic lipase breakdown of free fatty acids.",
+    "shelf_life": "24–48 hours",
+    "fungus": "Marasmius palmivorus (Bunch rot)",
+    "insects": "Bunch moth larvae",
+    "risk_score": 90,
+    "type": "Ventilated Ramp Hopper Storage"
+  },
+  "Pigeon Pea": {
+    "temp": "15–20°C",
+    "hum": "50–55%",
+    "pres": "Sun dry to 9–10% moisture. Store in hermetic multi-layer PICS bags or sealed galvanized bins to suffocate pulse beetles.",
+    "shelf_life": "18–24 months",
+    "fungus": "Fusarium udum, Aspergillus flavus",
+    "insects": "Pulse Beetle (Callosobruchus chinensis)",
+    "risk_score": 15,
+    "type": "Hermetic Pulse Silo / PICS Bags"
+  },
+  "Cowpea": {
+    "temp": "15–20°C",
+    "hum": "50–55%",
+    "pres": "Solar heating on black plastic sheets before bagging to destroy internal bruchid larvae; seal in airtight hermetic bags.",
+    "shelf_life": "18–24 months",
+    "fungus": "Rhizoctonia solani, Macrophomina phaseolina",
+    "insects": "Cowpea Weevil (Callosobruchus maculatus)",
+    "risk_score": 20,
+    "type": "Hermetic Pulse Storage"
+  },
+  "Moth Bean": {
+    "temp": "15–22°C",
+    "hum": "<50%",
+    "pres": "Clean and dry to <9% moisture. Store in moisture-proof drums or hermetic bins away from heat sources.",
+    "shelf_life": "18–24 months",
+    "fungus": "Charcoal rot, Fusarium oxysporum",
+    "insects": "Callosobruchus seed weevils",
+    "risk_score": 15,
+    "type": "Hermetic Pulse Silo with Desiccant"
+  },
+  "Faba Bean": {
+    "temp": "10–15°C",
+    "hum": "55–60%",
+    "pres": "Thorough drying to 11% moisture. Avoid high storage temperatures which cause rapid seed coat tanning and hardening.",
+    "shelf_life": "12–18 months",
+    "fungus": "Chocolate spot (Botrytis fabae), Rust",
+    "insects": "Broad Bean Weevil (Bruchus rufimanus)",
+    "risk_score": 20,
+    "type": "Ventilated Cool Pulse Warehouse"
+  },
+  "Clover": {
+    "temp": "5–15°C",
+    "hum": "35–45%",
+    "pres": "Dehumidified cold seed room. Pack in foil-laminated moisture-proof bags to sustain high germination vigor.",
+    "shelf_life": "24–36 months",
+    "fungus": "Sclerotinia trifoliorum (Clover rot)",
+    "insects": "Clover Seed Weevil (Apion apricans)",
+    "risk_score": 10,
+    "type": "Dehumidified Seed Storage Vault"
+  },
+  "Bermuda Grass": {
+    "temp": "10–18°C",
+    "hum": "35–45%",
+    "pres": "Clean, de-hull, and dry seeds to 8–10% moisture. Store in hermetic multi-wall kraft bags in dry godowns.",
+    "shelf_life": "24–48 months",
+    "fungus": "Bipolaris cynodontis (Blight)",
+    "insects": "Storage grain mites, Dermestid beetles",
+    "risk_score": 10,
+    "type": "Climate-Controlled Grass Seed Vault"
+  },
+  "Timothy Grass": {
+    "temp": "5–12°C",
+    "hum": "40–50%",
+    "pres": "Air-dry in shaded ventilated racks; seal in airtight drums with silica gel to preserve seed viability.",
+    "shelf_life": "24–36 months",
+    "fungus": "Claviceps purpurea (Ergot)",
+    "insects": "Grain mites, Timothy fly larvae",
+    "risk_score": 15,
+    "type": "Dehumidified Seed Storage Vault"
+  },
+  "Fescue": {
+    "temp": "5–10°C",
+    "hum": "40–45%",
+    "pres": "Maintain low temperature (0–10°C) to prevent loss of beneficial symbiotic fungal endophytes (Epichloë).",
+    "shelf_life": "18–36 months",
+    "fungus": "Rhizoctonia, Endophyte decline",
+    "insects": "Seed chalcids, Granary mites",
+    "risk_score": 12,
+    "type": "Endophyte-Preserving Seed Vault"
+  },
+  "Brome": {
+    "temp": "10–15°C",
+    "hum": "40–50%",
+    "pres": "De-awn and screen seeds; store in breathable jute sacks with polythene liners in rodent-proof sheds.",
+    "shelf_life": "24–36 months",
+    "fungus": "Head smut (Ustilago bullata)",
+    "insects": "Dried fruit beetle, Storage weevils",
+    "risk_score": 12,
+    "type": "Dehumidified Seed Warehouse"
+  },
+  "Vetch": {
+    "temp": "10–16°C",
+    "hum": "45–55%",
+    "pres": "Sun dry harvested seeds to 9% moisture; pack in airtight containers to avoid bruchid multiplication.",
+    "shelf_life": "24–36 months",
+    "fungus": "Ascochyta pisi, Downy mildew",
+    "insects": "Vetch Bruchid (Bruchus brachialis)",
+    "risk_score": 15,
+    "type": "Hermetic Pulse Seed Vault"
+  },
+  "Sweet Potato": {
+    "temp": "13–15°C",
+    "hum": "85–90%",
+    "pres": "MANDATORY: Cure at 28–30°C and 90% RH for 5–7 days to heal surface wounds before storage. NEVER store below 10°C (chilling injury causes core breakdown).",
+    "shelf_life": "4–7 months",
+    "fungus": "Black rot (Ceratocystis fimbriata), Rhizopus soft rot",
+    "insects": "Sweet Potato Weevil (Cylas formicarius)",
+    "risk_score": 40,
+    "type": "Cured Tuber Ventilated Storage Chamber"
+  },
+  "Cassava": {
+    "temp": "5–8°C",
+    "hum": "85–90%",
+    "pres": "Waxing fresh roots or packing in moist sawdust boxes prevents rapid post-harvest vascular streaking (PPD).",
+    "shelf_life": "2–4 weeks (Fresh) / 12 months (Dried Chips)",
+    "fungus": "Botryodiplodia theobromae, Fusarium solani",
+    "insects": "Coffee bean weevil (on dry chips)",
+    "risk_score": 75,
+    "type": "High-Humidity Cool Clamp Storage"
+  },
+  "Yam": {
+    "temp": "12–15°C",
+    "hum": "75–85%",
+    "pres": "Field cure at 32°C for 4 days. Store on slatted vertical wooden racks with continuous natural cross-ventilation. Keep above 12°C.",
+    "shelf_life": "4–6 months",
+    "fungus": "Yam dry rot (Penicillium sclerotigenum), Botryodiplodia",
+    "insects": "Yam Beetle (Heteroligus meles), Scale insects",
+    "risk_score": 35,
+    "type": "Ventilated Traditional Yam Barn"
+  },
+  "Turnip": {
+    "temp": "0–1°C",
+    "hum": "95–98%",
+    "pres": "Remove tops leaving 1 cm neck; store unwashed in slatted plastic crates; maintain 95% humidity to prevent spongy pithiness.",
+    "shelf_life": "4–6 months",
+    "fungus": "Bacterial soft rot (Pectobacterium), Rhizoctonia",
+    "insects": "Cabbage Root Maggot (Delia radicum)",
+    "risk_score": 25,
+    "type": "Dark Chilled Root Cellar"
+  },
+  "Radish": {
+    "temp": "0–1°C",
+    "hum": "95–98%",
+    "pres": "Hydrocool to 2°C immediately. Package in perforated polyethylene liners to retain moisture and turgidity.",
+    "shelf_life": "3–4 weeks (Spring) / 2–4 months (Daikon)",
+    "fungus": "Black root rot (Aphanomyces raphani), Soft rot",
+    "insects": "Flea beetles residual, Root fly larvae",
+    "risk_score": 30,
+    "type": "High-Humidity Chilled Cold Storage"
+  },
+  "Shallot": {
+    "temp": "0–2°C",
+    "hum": "65–70%",
+    "pres": "Field-cure tops for 2 weeks until neck tissue is completely sealed and paper-dry. Maintain low humidity (<70%) to stop root regrowth.",
+    "shelf_life": "6–8 months",
+    "fungus": "Neck rot (Botrytis allii), Black mold (Aspergillus niger)",
+    "insects": "Onion Thrips, Bulb Mites",
+    "risk_score": 20,
+    "type": "Multi-Tiered Ambient Curing Godown"
+  },
+  "Capsicum": {
+    "temp": "7–10°C",
+    "hum": "90–95%",
+    "pres": "CRITICAL: Do not store below 7°C (chilling injury causes sheet pitting and calyx rot). Wrap in micro-perforated film.",
+    "shelf_life": "3–5 weeks",
+    "fungus": "Gray mold (Botrytis cinerea), Alternaria rot",
+    "insects": "Pepper Maggot, Thrips",
+    "risk_score": 50,
+    "type": "Anti-Chilling Cool Storage (8-10°C)"
+  },
+  "Chilli": {
+    "temp": "8–10°C (Fresh) / 10–15°C (Dry)",
+    "hum": "90% (Fresh) / <55% (Dry)",
+    "pres": "For dry chillies: sun dry to <10% moisture; store in polythene-lined gunny bags in darkness to preserve bright red carotenoids.",
+    "shelf_life": "3 weeks (Fresh) / 12–18 months (Dry)",
+    "fungus": "Colletotrichum capsici (Anthracnose), Aspergillus",
+    "insects": "Cigarette Beetle (Lasioderma serricorne)",
+    "risk_score": 30,
+    "type": "Dehumidified Spice & Produce Storage"
+  },
+  "Squash": {
+    "temp": "10–13°C",
+    "hum": "60–75%",
+    "pres": "Cure winter squash at 25°C for 10 days to harden skin; store on single layers on slatted shelves with good airflow. Avoid chilling.",
+    "shelf_life": "2–6 months",
+    "fungus": "Black rot (Didymella bryoniae), Fusarium rot",
+    "insects": "Squash bugs, Pickleworm residual",
+    "risk_score": 35,
+    "type": "Cured Cool Storage Chamber"
+  },
+  "Zucchini": {
+    "temp": "7–10°C",
+    "hum": "90–95%",
+    "pres": "Hydrocool to 8°C. Extremely sensitive to ethylene (causes rapid yellowing) and cold injury below 5°C (causes water-soaked pits).",
+    "shelf_life": "1–2 weeks",
+    "fungus": "Watery soft rot (Sclerotinia), Gray mold",
+    "insects": "Melon aphids, Whitefly nymphs",
+    "risk_score": 70,
+    "type": "Anti-Chilling Walk-in Cool Room"
+  },
+  "Sponge Gourd": {
+    "temp": "10–12°C",
+    "hum": "85–90%",
+    "pres": "Wrap individually in perforated paper wraps. Avoid temperatures below 10°C to prevent surface spotting and decay.",
+    "shelf_life": "2–3 weeks",
+    "fungus": "Anthracnose, Downy mildew",
+    "insects": "Fruit Flies (Bactrocera cucurbitae)",
+    "risk_score": 60,
+    "type": "Cool Ventilated Storage Chamber"
+  },
+  "Ash Gourd": {
+    "temp": "13–15°C",
+    "hum": "70–75%",
+    "pres": "Store intact fruits with their natural waxy coating on slatted wooden shelves. Do not wash or bruise outer skin.",
+    "shelf_life": "5–8 months",
+    "fungus": "Fusarium fruit rot, Alternaria",
+    "insects": "Melon fruit fly",
+    "risk_score": 15,
+    "type": "Naturally Ventilated Dry Godown"
+  },
+  "Cauliflower": {
+    "temp": "0–1°C",
+    "hum": "95–98%",
+    "pres": "Rapid hydrocooling or vacuum cooling. Retain jacket leaves to protect the white curd. Isolate from ethylene-producing apples.",
+    "shelf_life": "3–5 weeks",
+    "fungus": "Bacterial soft rot, Alternaria brassicicola",
+    "insects": "Diamondback Moth larvae, Cabbage Aphids",
+    "risk_score": 45,
+    "type": "Ultrasonic Misted Cold Room (0°C)"
+  },
+  "Brussels Sprouts": {
+    "temp": "0°C",
+    "hum": "95–98%",
+    "pres": "Forced-air cool to 0°C immediately. Package in vented film cartons; high ethylene sensitivity leads to yellowing and leaf loss.",
+    "shelf_life": "4–6 weeks",
+    "fungus": "Alternaria brassicae, Gray mold",
+    "insects": "Cabbage looper, Aphids",
+    "risk_score": 40,
+    "type": "Forced-Air High-Humidity Cold Storage"
+  },
+  "Kohlrabi": {
+    "temp": "0–1°C",
+    "hum": "95–98%",
+    "pres": "Trim tops to 2 cm; store in perforated master crates. Low temperature prevents rapid lignification of the inner edible bulb.",
+    "shelf_life": "2–3 months",
+    "fungus": "White rot (Sclerotinia), Rhizoctonia",
+    "insects": "Cabbage stem weevil",
+    "risk_score": 30,
+    "type": "Chilled Root & Bulb Cold Storage"
+  },
+  "Kale": {
+    "temp": "0°C",
+    "hum": "98–100%",
+    "pres": "Top-icing or ultrasonic humidification at near 100% RH prevents rapid moisture wilt; strictly exclude ethylene.",
+    "shelf_life": "2–3 weeks",
+    "fungus": "Black rot (Xanthomonas campestris), Downy mildew",
+    "insects": "Harlequin bugs, Aphids",
+    "risk_score": 65,
+    "type": "Ice-Banked Walk-in Cold Room"
+  },
+  "Celery": {
+    "temp": "0–1°C",
+    "hum": "98–100%",
+    "pres": "Rapid hydrocooling or vacuum cooling. Pack in polyethylene-lined crates. Monitor stalks for petiole pithiness.",
+    "shelf_life": "2–3 months",
+    "fungus": "Pink rot (Sclerotinia sclerotiorum), Early blight",
+    "insects": "Celery Leafminer larvae, Slugs",
+    "risk_score": 45,
+    "type": "Forced-Air Chilled Humid Storage"
+  },
+  "Asparagus": {
+    "temp": "0–2°C",
+    "hum": "95–100%",
+    "pres": "Hydrocool to 2°C within 2 hours of harvest. Store spears upright with cut butts resting on damp moisture pads to prevent geotropic bending.",
+    "shelf_life": "2–3 weeks",
+    "fungus": "Purple spot (Stemphylium vesicarium), Fusarium",
+    "insects": "Asparagus Beetle (Crioceris asparagi)",
+    "risk_score": 70,
+    "type": "Vertical Water-Padded Cold Storage"
+  },
+  "Artichoke": {
+    "temp": "0°C",
+    "hum": "95–100%",
+    "pres": "Hydrocooling or room cooling to 0°C. Pack in film-lined cartons to stop bract wilting, feathering, and blackening.",
+    "shelf_life": "3–4 weeks",
+    "fungus": "Gray mold (Botrytis cinerea), Bacterial soft rot",
+    "insects": "Artichoke Plume Moth larvae",
+    "risk_score": 50,
+    "type": "High-Humidity Chilled Walk-in Cooler"
+  },
+  "Blueberry": {
+    "temp": "-0.5 to 0°C",
+    "hum": "90–95%",
+    "pres": "Forced-air pre-cooling to 0°C within 2 hours. Controlled atmosphere (3% O2, 10–12% CO2) suppresses decay without washing.",
+    "shelf_life": "3–6 weeks",
+    "fungus": "Botrytis cinerea (Gray mold), Colletotrichum rot",
+    "insects": "Spotted Wing Drosophila (Drosophila suzukii)",
+    "risk_score": 60,
+    "type": "Blast-Chilled CA Cold Storage"
+  },
+  "Raspberry": {
+    "temp": "-0.5 to 0°C",
+    "hum": "90–95%",
+    "pres": "Ultra-rapid cooling to 0°C within 1 hour. Elevated CO2 atmosphere (15–20%) halts gray mold. Handle in rigid clamshells.",
+    "shelf_life": "3–7 days",
+    "fungus": "Botrytis cinerea, Cladosporium",
+    "insects": "Spotted Wing Drosophila, Raspberry Fruitworm",
+    "risk_score": 95,
+    "type": "Rapid-Chilled CA Cold Storage"
+  },
+  "Blackberry": {
+    "temp": "-0.5 to 0°C",
+    "hum": "90–95%",
+    "pres": "Pre-cool rapidly; protect berries from physical jarring and condensation which causes juice leakage (red cell reversion).",
+    "shelf_life": "4–8 days",
+    "fungus": "Gray mold, Rhizopus leak rot",
+    "insects": "Spotted Wing Drosophila",
+    "risk_score": 90,
+    "type": "Blast-Chilled Berry Walk-in Cooler"
+  },
+  "Cherry": {
+    "temp": "-1 to 0°C",
+    "hum": "90–95%",
+    "pres": "Hydrocooling with food-grade sanitizing wash. Modified atmosphere packaging liners (5% O2, 10% CO2) keep green stems fresh.",
+    "shelf_life": "3–5 weeks",
+    "fungus": "Brown rot (Monilinia fructicola), Botrytis",
+    "insects": "Cherry Fruit Fly, Thrips",
+    "risk_score": 70,
+    "type": "Hydrocooled CA Cold Storage"
+  },
+  "Plum": {
+    "temp": "0–1°C",
+    "hum": "90–95%",
+    "pres": "Forced-air pre-cooling. Avoid holding at 2–7°C (internal breakdown / flesh translucency zone).",
+    "shelf_life": "3–6 weeks",
+    "fungus": "Brown rot (Monilinia), Blue mold (Penicillium)",
+    "insects": "Plum Curculio",
+    "risk_score": 65,
+    "type": "Controlled Atmosphere Cold Storage"
+  },
+  "Peach": {
+    "temp": "-0.5 to 0°C",
+    "hum": "90–95%",
+    "pres": "Hydrocooling; avoid temperature holding between 2–8°C which induces mealiness, flesh browning, and woolly texture.",
+    "shelf_life": "2–4 weeks",
+    "fungus": "Brown rot (Monilinia fructicola), Rhizopus stolonifer",
+    "insects": "Oriental Fruit Moth",
+    "risk_score": 85,
+    "type": "Hydrocooled Cold Storage Chamber"
+  },
+  "Pecan": {
+    "temp": "0–5°C (Short) / -10°C (Long)",
+    "hum": "55–60%",
+    "pres": "Dry in-shell to 4.5% kernel moisture. Store in sealed rooms with nitrogen flush or freezing to stop oil oxidation.",
+    "shelf_life": "12–24 months",
+    "fungus": "Pecan scab residual, Aspergillus flavus",
+    "insects": "Pecan Weevil (Curculio caryae)",
+    "risk_score": 20,
+    "type": "Airtight Nut Cold Storage Vault"
+  },
+  "Macadamia": {
+    "temp": "0–10°C",
+    "hum": "50–55%",
+    "pres": "De-husk immediately; dry slowly to 1.5% moisture; pack in nitrogen-flushed heavy foil vacuum barrier bags.",
+    "shelf_life": "18–24 months",
+    "fungus": "Penicillium mold under moist conditions",
+    "insects": "Macadamia Nut Borer, Tropical Nut Borer",
+    "risk_score": 15,
+    "type": "Nitrogen-Flushed Nut Storage Store"
+  },
+  "Hazelnut": {
+    "temp": "2–5°C",
+    "hum": "60–65%",
+    "pres": "Dry to 6% moisture in forced-air dryers at 35°C; store in bulk totes with dehumidifiers away from off-odors.",
+    "shelf_life": "12–18 months",
+    "fungus": "Aspergillus flavus, Brown stain",
+    "insects": "Filbertworm, Hazelnut Weevil (Curculio nucum)",
+    "risk_score": 20,
+    "type": "Airtight Cool Nut Warehouse"
+  },
+  "Coffee": {
+    "temp": "15–20°C",
+    "hum": "60–65%",
+    "pres": "Grade green beans to 10.5–11.5% moisture; package in multi-layer hermetic GrainPro liners to preserve cupping profile.",
+    "shelf_life": "12–24 months",
+    "fungus": "Aspergillus ochraceus (Ochratoxin A danger if wet)",
+    "insects": "Coffee Berry Borer (Hypothenemus hampei)",
+    "risk_score": 15,
+    "type": "Hermetic Multi-Layer Bag Warehouse"
+  },
+  "Tea": {
+    "temp": "15–20°C",
+    "hum": "<50%",
+    "pres": "Pack in airtight moisture-barrier foil-lined multi-wall paper sacks; isolate strictly from spices and high humidity.",
+    "shelf_life": "18–36 months",
+    "fungus": "Aspergillus mold if moisture rises above 7%",
+    "insects": "Cigarette Beetle, Warehouse Moth",
+    "risk_score": 10,
+    "type": "Moisture-Barrier Foil-Lined Bins"
+  },
+  "Cocoa": {
+    "temp": "15–20°C",
+    "hum": "65–70%",
+    "pres": "Store dried fermented beans (moisture 6.5–7.5%) in jute bags on pallets 15 cm above ground and 50 cm away from walls.",
+    "shelf_life": "12–18 months",
+    "fungus": "Penicillium, Aspergillus (Mycotoxin risk)",
+    "insects": "Cocoa Moth (Ephestia elutella)",
+    "risk_score": 20,
+    "type": "Ventilated Dry Cocoa Warehouse"
+  },
+  "Tobacco": {
+    "temp": "20–25°C",
+    "hum": "60–65%",
+    "pres": "Condition cured leaves to 12–14% moisture; pack in wooden hogsheads or cardboard cases for fermentation aging.",
+    "shelf_life": "24–48 months",
+    "fungus": "Blue mold, Pole rot, Aspergillus",
+    "insects": "Tobacco Beetle (Lasioderma serricorne)",
+    "risk_score": 25,
+    "type": "Controlled Humidity Aging Warehouse"
+  },
+  "Rubber": {
+    "temp": "20–28°C",
+    "hum": "<60%",
+    "pres": "Hang smoked sheets on timber racks in dark, ventilated sheds. Strictly protect from copper, UV light, and heat.",
+    "shelf_life": "12–24 months",
+    "fungus": "Surface mold, Mildew in damp air",
+    "insects": "Termites attacking structural timber",
+    "risk_score": 15,
+    "type": "Ventilated Dry Sheet Smokehouse Racks"
+  },
+  "Turmeric": {
+    "temp": "15–20°C",
+    "hum": "<60%",
+    "pres": "Boil fresh fingers, sun-dry to 10% moisture, and polish. Store in dark airtight containers to prevent curcumin photo-oxidation.",
+    "shelf_life": "18–36 months",
+    "fungus": "Rhizome rot, Storage penicillium",
+    "insects": "Drugstore Beetle (Stegobium paniceum)",
+    "risk_score": 15,
+    "type": "Dehumidified Hermetic Spice Vault"
+  },
+  "Ginger": {
+    "temp": "12–14°C (Fresh) / 15–20°C (Dry)",
+    "hum": "85–90% (Fresh) / <60% (Dry)",
+    "pres": "Fresh ginger chills below 12°C. Dry sonth ginger should be sun-dried to 9% moisture and sealed in polythene bags.",
+    "shelf_life": "2–4 months (Fresh) / 18–24 months (Dry)",
+    "fungus": "Fusarium oxysporum, Pythium soft rot",
+    "insects": "Cigarette Beetle, Coffee Bean Weevil",
+    "risk_score": 25,
+    "type": "Controlled Atmosphere Spice Godown"
+  },
+  "Cardamom": {
+    "temp": "10–15°C",
+    "hum": "<60%",
+    "pres": "Cure green capsules in drying kilns at 45–50°C; pack in black polythene-lined wooden boxes to retain chlorophyll and cineole aroma.",
+    "shelf_life": "18–24 months",
+    "fungus": "Capsule rot, Damp storage mold",
+    "insects": "Cigarette Beetle, Red Flour Beetle",
+    "risk_score": 20,
+    "type": "Dark Hermetic Spice Storage Vault"
+  },
+  "Black Pepper": {
+    "temp": "15–20°C",
+    "hum": "<60%",
+    "pres": "Sun dry harvested berries until moisture drops below 11%; store in multi-wall paper bags with plastic barrier in aerated godowns.",
+    "shelf_life": "24–36 months",
+    "fungus": "Aspergillus flavus, Storage mildew",
+    "insects": "Cigarette Beetle, Spice Weevil",
+    "risk_score": 10,
+    "type": "Hermetic Spice Silo / Dry Warehouse"
+  },
+  "Clove": {
+    "temp": "15–20°C",
+    "hum": "<60%",
+    "pres": "Dry buds in shade or solar kilns until stems snap cleanly; store in airtight tins or foil bags to halt eugenol oil evaporation.",
+    "shelf_life": "24–36 months",
+    "fungus": "Mold on insufficiently dried buds",
+    "insects": "Warehouse Beetle, Grain Mites",
+    "risk_score": 10,
+    "type": "Sealed Hermetic Spice Vault"
+  },
+  "Cinnamon": {
+    "temp": "18–22°C",
+    "hum": "<60%",
+    "pres": "Roll peeled bark into tight quills, shade dry to 11% moisture, and bind into compact bundles wrapped in moisture-proof paper.",
+    "shelf_life": "24–48 months",
+    "fungus": "Mildew under damp storage conditions",
+    "insects": "Wood Borers, Cigarette Beetle",
+    "risk_score": 10,
+    "type": "Dry Ambient Spice Godown"
+  },
+  "Nutmeg": {
+    "temp": "15–20°C",
+    "hum": "<60%",
+    "pres": "Dry seed in shell for 6 weeks until kernels rattle; crack and remove shell; store in airtight tins in cool, dark rooms.",
+    "shelf_life": "24–36 months",
+    "fungus": "Aspergillus, Post-harvest rot",
+    "insects": "Nutmeg Weevil, Coffee Bean Weevil",
+    "risk_score": 15,
+    "type": "Dehumidified Dark Storage Vault"
+  },
+  "Vanilla": {
+    "temp": "15–20°C",
+    "hum": "65–70%",
+    "pres": "Cured beans (25–30% moisture) bundled in parchment paper and kept in wooden conditioning boxes to develop vanillin aroma.",
+    "shelf_life": "18–36 months",
+    "fungus": "Vanilla mold (Penicillium spp.)",
+    "insects": "Storage mites, Dermestid beetles",
+    "risk_score": 25,
+    "type": "Waxed Paper-Lined Wooden Boxes"
+  },
+  "Saffron": {
+    "temp": "10–15°C",
+    "hum": "<40%",
+    "pres": "Rapid drying at 45°C immediately after flower harvesting; pack in airtight dark amber glass vials away from light and oxygen.",
+    "shelf_life": "24–36 months",
+    "fungus": "Mold from ambient humidity absorption",
+    "insects": "Storage mites",
+    "risk_score": 10,
+    "type": "Airtight Amber Glass Nitrogen Vault"
+  },
+  "Coriander": {
+    "temp": "15–20°C",
+    "hum": "<60%",
+    "pres": "Dry fruits to 9% moisture; pack in polythene-lined jute sacks in well-ventilated dry warehouses to prevent seed darkening.",
+    "shelf_life": "18–24 months",
+    "fungus": "Storage molds, Mildew",
+    "insects": "Cigarette Beetle, Drugstore Beetle",
+    "risk_score": 15,
+    "type": "Hermetic Seed Silo / Moisture Bagging"
+  },
+  "Cumin": {
+    "temp": "15–20°C",
+    "hum": "<55%",
+    "pres": "Clean and dry seeds to 8% moisture; pack in sealed tins or airtight laminated pouches to lock in cuminaldehyde essential oil.",
+    "shelf_life": "18–24 months",
+    "fungus": "Alternaria, Storage fungi",
+    "insects": "Cigarette Beetle, Rust-Red Flour Beetle",
+    "risk_score": 15,
+    "type": "Dehumidified Hermetic Spice Silo"
+  },
+  "Fennel": {
+    "temp": "15–20°C",
+    "hum": "<60%",
+    "pres": "Dry harvested umbels under shade to preserve vibrant green color; store in moisture-proof containers away from light.",
+    "shelf_life": "18–24 months",
+    "fungus": "Ramularia blight residual, Storage mold",
+    "insects": "Seed Weevils, Grain Borers",
+    "risk_score": 15,
+    "type": "Sealed Dry Spice Warehouse"
+  },
+  "Fenugreek": {
+    "temp": "15–22°C",
+    "hum": "<60%",
+    "pres": "Sun dry seeds to 9% moisture; store in galvanized drums or moisture-proof bags; hard seed coat offers natural pest resistance.",
+    "shelf_life": "24–36 months",
+    "fungus": "Downy mildew, Aspergillus",
+    "insects": "Pulse Beetle (Callosobruchus)",
+    "risk_score": 10,
+    "type": "Hermetic Dry Pulse/Spice Silo"
+  },
+  "Apple": {
+    "temp": "0–2°C",
+    "hum": "90–95%",
+    "pres": "Controlled Atmosphere (1.5% O2, 1.0% CO2) with rapid pre-cooling. Ethylene scrubbing extends storage life up to 10 months.",
+    "shelf_life": "4–10 months",
+    "fungus": "Blue mold (Penicillium expansum), Gray mold",
+    "insects": "Codling Moth larvae",
+    "risk_score": 30,
+    "type": "Controlled Atmosphere Cold Storage"
+  },
+  "Banana": {
+    "temp": "13–14°C",
+    "hum": "90–95%",
+    "pres": "Store mature green fruit at 13.5°C; do not store below 13°C (severe peel chilling injury). Ripen with ethylene in ripening rooms.",
+    "shelf_life": "2–4 weeks",
+    "fungus": "Crown rot (Colletotrichum musae), Anthracnose",
+    "insects": "Banana Weevil borer",
+    "risk_score": 75,
+    "type": "Cold Storage & Ripening Room"
+  },
+  "Orange": {
+    "temp": "3–8°C",
+    "hum": "85–90%",
+    "pres": "Wash, wax with food-grade fungicidal wax, and store in well-ventilated plastic crates. Avoid stack pressure.",
+    "shelf_life": "3–8 weeks",
+    "fungus": "Green mold (Penicillium digitatum), Blue mold",
+    "insects": "Citrus Rust Mite, Scale insects",
+    "risk_score": 45,
+    "type": "Ventilated Chilled Warehouse"
+  },
+  "Mango": {
+    "temp": "12–13°C",
+    "hum": "85–90%",
+    "pres": "Hot water dip treatment (48°C for 5 min) against anthracnose; store at 12–13°C to prevent chilling injury.",
+    "shelf_life": "2–3 weeks",
+    "fungus": "Anthracnose (Colletotrichum gloeosporioides), Stem-end rot",
+    "insects": "Mango Seed Weevil, Oriental Fruit Fly",
+    "risk_score": 85,
+    "type": "Cold Storage & Vapour Heat Chamber"
+  },
+  "Grapes": {
+    "temp": "-1 to 0°C",
+    "hum": "90–95%",
+    "pres": "Rapid forced-air pre-cooling; pack with SO2 generator sheets in vented cartons to suppress Botrytis gray mold.",
+    "shelf_life": "2–6 weeks",
+    "fungus": "Gray mold (Botrytis cinerea)",
+    "insects": "Grape Mealybug",
+    "risk_score": 70,
+    "type": "Precooled Cold Storage with SO2"
+  },
+  "Potato": {
+    "temp": "4–10°C",
+    "hum": "90–95%",
+    "pres": "Cure at 15°C for 2 weeks. Store in completely dark, ventilated cold storage; treat with CIPC sprout suppressant if table stock.",
+    "shelf_life": "5–10 months",
+    "fungus": "Late blight (Phytophthora infestans), Silver scurf",
+    "insects": "Potato Tuber Moth (Phthorimaea operculella)",
+    "risk_score": 50,
+    "type": "Darkened Cold Storage with Sprout Suppression"
+  },
+  "Tomato": {
+    "temp": "12–15°C",
+    "hum": "85–90%",
+    "pres": "Store mature green fruit at 13–15°C. Never store below 10°C (causes chilling injury, uneven ripening, and watery breakdown).",
+    "shelf_life": "1–3 weeks",
+    "fungus": "Alternaria rot, Early blight, Late blight",
+    "insects": "Tomato Fruit Borer (Helicoverpa armigera)",
+    "risk_score": 80,
+    "type": "Anti-Chilling Cool Storage (12-15°C)"
+  },
+  "Onion": {
+    "temp": "0–2°C (Cold) or 25–30°C (Ambient)",
+    "hum": "65–70%",
+    "pres": "Thorough field curing until necks are paper-dry; store in slatted wooden crates or mesh bags with high forced ventilation.",
+    "shelf_life": "6–9 months",
+    "fungus": "Neck rot (Botrytis allii), Black mold (Aspergillus niger)",
+    "insects": "Onion Thrips, Bulb Mites",
+    "risk_score": 25,
+    "type": "Ventilated Cold Storage / Curing Godown"
+  },
+  "Garlic": {
+    "temp": "0–2°C",
+    "hum": "60–70%",
+    "pres": "Cure bulbs for 3 weeks; keep relative humidity low (<70%) to prevent root emergence and mold development.",
+    "shelf_life": "6–8 months",
+    "fungus": "Penicillium blue mold, Botrytis rot",
+    "insects": "Bulb Mites, Onion Thrips",
+    "risk_score": 20,
+    "type": "Ventilated Allium Curing Godown"
+  },
+  "Soybean": {
+    "temp": "10–15°C",
+    "hum": "<55%",
+    "pres": "Dry to 11–12% moisture. Aerate silo to prevent moisture migration and free fatty acid degradation.",
+    "shelf_life": "12–18 months",
+    "fungus": "Diaporthe phaseolorum, Aspergillus flavus",
+    "insects": "Bean Bruchid, Sawtoothed Grain Beetle",
+    "risk_score": 15,
+    "type": "Dry Oilseed Silo with Aeration"
+  },
+  "Chickpea": {
+    "temp": "15–20°C",
+    "hum": "50–60%",
+    "pres": "Hermetic grain bins or triple-layer bags; keep moisture under 10% to prevent pulse beetle outbreaks.",
+    "shelf_life": "18–24 months",
+    "fungus": "Ascochyta blight, Fusarium wilt",
+    "insects": "Gram Pod Borer, Pulse Beetle (Callosobruchus)",
+    "risk_score": 15,
+    "type": "Hermetic Pulse Silo / PICS Bags"
+  },
+  "Lentil": {
+    "temp": "15–20°C",
+    "hum": "50–60%",
+    "pres": "Thoroughly dry to 10% moisture; store in clean airtight silos away from direct heat and moisture.",
+    "shelf_life": "18–24 months",
+    "fungus": "Anthracnose, Ascochyta lentis",
+    "insects": "Pulse Weevil (Callosobruchus maculatus)",
+    "risk_score": 15,
+    "type": "Hermetic Pulse Storage"
+  },
+  "Groundnut": {
+    "temp": "5–10°C",
+    "hum": "55–65%",
+    "pres": "Store in-shell at <7% kernel moisture. Maintain low temperature to avoid Aspergillus flavus and carcinogenic aflatoxin synthesis.",
+    "shelf_life": "10–12 months",
+    "fungus": "Aspergillus flavus (Aflatoxin risk), Penicillium",
+    "insects": "Groundnut Borer (Caryedon serratus), Red Flour Beetle",
+    "risk_score": 30,
+    "type": "Climate-Controlled Groundnut Warehouse"
+  },
+  "Sunflower": {
+    "temp": "10–15°C",
+    "hum": "<55%",
+    "pres": "Dry seed to 8% moisture. Forced aeration prevents hot spots and rapid rancidity of high-oil seeds.",
+    "shelf_life": "12 months",
+    "fungus": "Sclerotinia head rot, Alternaria helianthi",
+    "insects": "Sunflower Moth larvae, Confused Flour Beetle",
+    "risk_score": 25,
+    "type": "Aerated Oilseed Silo"
+  },
+  "Papaya": {
+    "temp": "10–12°C",
+    "hum": "85–90%",
+    "pres": "Hold at 10–12°C to slow ripening without chilling injury. Ethylene scrubbing in transit extends marketability.",
+    "shelf_life": "1–3 weeks",
+    "fungus": "Anthracnose (Colletotrichum gloeosporioides), Phytophthora",
+    "insects": "Papaya Fruit Fly",
+    "risk_score": 80,
+    "type": "Cold Storage Produce Chamber"
+  },
+  "Pomegranate": {
+    "temp": "5–6°C",
+    "hum": "90–95%",
+    "pres": "Pre-cooling to 5°C. Package in plastic liner bags; keep above 5°C to avoid chilling husk scald.",
+    "shelf_life": "2–3 months",
+    "fungus": "Heart rot (Alternaria), Gray mold (Botrytis)",
+    "insects": "Pomegranate Butterfly (Virachola isocrates)",
+    "risk_score": 40,
+    "type": "Chilled Atmosphere Storage"
+  },
+  "Watermelon": {
+    "temp": "10–15°C",
+    "hum": "85–90%",
+    "pres": "Well-ventilated ambient/cool warehouse. Store single or double-stacked; below 10°C chilling causes rind pitting.",
+    "shelf_life": "2–3 weeks",
+    "fungus": "Gummy stem blight, Fusarium fruit rot",
+    "insects": "Spider mites, Melon Aphid",
+    "risk_score": 60,
+    "type": "Ventilated Cool Storage"
+  },
+  "Muskmelon": {
+    "temp": "3–7°C",
+    "hum": "90–95%",
+    "pres": "Rapid forced-air or hydrocooling to 3°C within hours of picking. High humidity prevents rind wrinkling.",
+    "shelf_life": "1–2 weeks",
+    "fungus": "Fusarium rot, Rhizopus soft rot",
+    "insects": "Melon fly larvae",
+    "risk_score": 75,
+    "type": "Chilled Humid Produce Chamber"
+  },
+  "Cabbage": {
+    "temp": "0°C",
+    "hum": "95–98%",
+    "pres": "Room cooling or forced air. Retain 2–3 wrapper leaves. Strictly isolate from apples and bananas (ethylene).",
+    "shelf_life": "3–6 months",
+    "fungus": "Bacterial soft rot, Black rot (Xanthomonas)",
+    "insects": "Cabbage looper, Cabbage aphid",
+    "risk_score": 35,
+    "type": "Ultrasonic Misted Cold Storage"
+  },
+  "Carrot": {
+    "temp": "0–1°C",
+    "hum": "98–100%",
+    "pres": "Hydrocooling to 1°C. Remove tops completely. Isolate from ethylene which synthesizes isocoumarin (bitter taste).",
+    "shelf_life": "6–9 months",
+    "fungus": "Sclerotinia white rot, Black rot (Thielaviopsis)",
+    "insects": "Carrot Rust Fly (Psila rosae)",
+    "risk_score": 25,
+    "type": "High-Humidity Chilled Root Cellar"
+  },
+  "Almond": {
+    "temp": "0–10°C",
+    "hum": "55–65%",
+    "pres": "Dry kernels to <6% moisture. Store in moisture-proof bins with insect-resistant seals and fumigation.",
+    "shelf_life": "12–24 months",
+    "fungus": "Aspergillus flavus (Aflatoxin)",
+    "insects": "Navel Orangeworm, Merchant Grain Beetle",
+    "risk_score": 20,
+    "type": "Airtight Dry Nut Warehouse"
+  },
+  "Walnut": {
+    "temp": "0–5°C",
+    "hum": "55–65%",
+    "pres": "Dry immediately to 4% moisture. Cold storage prevents polyunsaturated fatty acid oxidation and bitter rancidity.",
+    "shelf_life": "12–18 months",
+    "fungus": "Aspergillus, Penicillium",
+    "insects": "Walnut Husk Fly, Indian Meal Moth",
+    "risk_score": 20,
+    "type": "Climate-Controlled Nut Storage"
+  },
+  "Cashew": {
+    "temp": "15–20°C",
+    "hum": "<60%",
+    "pres": "Dry in-shell to 8% moisture. Kernel export in Vita-Pack vacuum-sealed nitrogen-flushed tins.",
+    "shelf_life": "18–24 months",
+    "fungus": "Aspergillus niger",
+    "insects": "Sawtoothed Grain Beetle, Tribolium",
+    "risk_score": 15,
+    "type": "Nitrogen-Flushed Nut Warehouse"
+  }
+}
+
+# Write to SeedIQ/knowledge_base/storage_db.json
+kb_path = 'SeedIQ/knowledge_base/storage_db.json'
+with open(kb_path, 'w', encoding='utf-8') as f:
+    json.dump(STORAGE_KNOWLEDGE_BASE, f, indent=2)
+
+print(f'Successfully updated {kb_path} with {len(STORAGE_KNOWLEDGE_BASE)} crops!')
+
+# Also update SeedIQ/storage_db.json in root if it exists
+root_db_path = 'SeedIQ/storage_db.json'
+if os.path.exists(root_db_path):
+    with open(root_db_path, 'w', encoding='utf-8') as f:
+        json.dump(STORAGE_KNOWLEDGE_BASE, f, indent=2)
+    print(f'Successfully updated {root_db_path}!')

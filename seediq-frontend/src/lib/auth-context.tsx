@@ -250,7 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthTransition({ type: null, message: "" });
   }, []);
 
-  // 1. Sign In with Email + Password (Hybrid Flask + Supabase Cloud Auth)
+  // 1. Sign In with Email + Password via Supabase Auth
   const signIn = async (
     email: string,
     password: string
@@ -265,7 +265,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ? "researcher@quantum.org"
           : rawInput;
 
-      // First attempt: Backend Flask API (with Supabase sync)
+      // 1. Primary: Direct Supabase GoTrue Auth
+      try {
+        const { data: supaData, error: supaError } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+
+        if (!supaError && supaData && (supaData.user || supaData.access_token)) {
+          const supaUser = supaData.user || (supaData.access_token ? await supabase.auth.getUser(supaData.access_token) : null);
+          const token = supaData.access_token || supaData.session?.access_token;
+          if (token) {
+            localStorage.setItem("seediq_supabase_token", token);
+          }
+
+          const username = supaUser?.user_metadata?.username || normalizedEmail.split("@")[0];
+          const displayName = supaUser?.user_metadata?.display_name || supaUser?.user_metadata?.name || username;
+          const resolvedRole: UserRole =
+            normalizedEmail === "admin@seediq.ai" || username === "admin"
+              ? "Admin"
+              : normalizedEmail === "researcher@quantum.org" || username === "researcher"
+              ? "Researcher"
+              : (supaUser?.user_metadata?.role as UserRole) || "Farmer";
+
+          const authenticatedUser: User = {
+            id: supaUser?.id || `supa_${Date.now()}`,
+            username: username,
+            email: supaUser?.email || normalizedEmail,
+            name: displayName,
+            display_name: displayName,
+            role: resolvedRole,
+            isGuest: false,
+            provider: "supabase",
+          };
+
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
+          setUser(authenticatedUser);
+          setIsLoading(false);
+
+          // Synchronize session with backend Flask in background (non-blocking)
+          fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: normalizedEmail, password }),
+          }).catch(() => {});
+
+          await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+          return { success: true, user: authenticatedUser };
+        } else if (supaError) {
+          // If Supabase returned an explicit error (like Email not confirmed or Invalid login credentials)
+          const errText = supaError.message || "Invalid email or password.";
+          if (errText.toLowerCase().includes("email not confirmed")) {
+            setIsLoading(false);
+            return {
+              success: false,
+              error: "Please confirm your email address before signing in. Check your inbox for the Supabase verification link or code.",
+            };
+          }
+        }
+      } catch (err) {
+        // Fallback to backend API if Supabase fetch failed
+      }
+
+      // 2. Secondary fallback to backend /api/login
       try {
         const res = await fetch("/api/login", {
           method: "POST",
@@ -309,66 +371,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return { success: false, error: data.message || "Invalid email or password." };
           }
         }
-      } catch {
-        // Backend /api/login was unreachable (e.g. hosted on Vercel) -> Fallback directly to Supabase
-      }
+      } catch {}
 
-      // Direct Supabase GoTrue Auth Fallback (production cloud authentication)
-      try {
-        const { data: supaData, error: supaError } = await supabase.auth.signInWithPassword({
-          email: normalizedEmail,
-          password,
-        });
-
-        if (supaError) {
-          setIsLoading(false);
-          return { success: false, error: supaError.message || "Invalid email or password." };
-        }
-
-        if (supaData && (supaData.user || supaData.access_token)) {
-          const supaUser = supaData.user || (supaData.access_token ? await supabase.auth.getUser(supaData.access_token) : null);
-          const token = supaData.access_token || supaData.session?.access_token;
-          if (token) {
-            localStorage.setItem("seediq_supabase_token", token);
-          }
-
-          const username = supaUser?.user_metadata?.username || normalizedEmail.split("@")[0];
-          const displayName = supaUser?.user_metadata?.display_name || supaUser?.user_metadata?.name || username;
-          const resolvedRole: UserRole =
-            normalizedEmail === "admin@seediq.ai" || username === "admin"
-              ? "Admin"
-              : normalizedEmail === "researcher@quantum.org" || username === "researcher"
-              ? "Researcher"
-              : (supaUser?.user_metadata?.role as UserRole) || "Farmer";
-
-          const authenticatedUser: User = {
-            id: supaUser?.id || `supa_${Date.now()}`,
-            username: username,
-            email: supaUser?.email || normalizedEmail,
-            name: displayName,
-            display_name: displayName,
-            role: resolvedRole,
-            isGuest: false,
-            provider: "supabase",
-          };
-
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
-          setUser(authenticatedUser);
-          setIsLoading(false);
-          await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
-          return { success: true, user: authenticatedUser };
-        }
-
-        return { success: false, error: "Invalid email or password." };
-      } catch (e: any) {
-        return { success: false, error: e?.message || "Failed to reach authentication server." };
-      }
+      return { success: false, error: "Invalid email or password." };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 2. Request OTP for Registration
+  // 2. Sign Up via Supabase Auth
   const requestRegistrationOtp = async (
     name: string,
     email: string,
@@ -376,66 +387,170 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ): Promise<{ success: boolean; message?: string; error?: string }> => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/register/request-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-          password: password,
-        }),
-      });
-      const data = await res.json();
+      const trimmedEmail = email.trim().toLowerCase();
+      const trimmedName = name.trim();
 
-      if (!res.ok || data.status === "error") {
-        return { success: false, error: data.message || "Failed to request registration code." };
+      // 1. Direct Supabase GoTrue Auth Sign Up
+      const { data, error } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password: password,
+        options: {
+          data: {
+            display_name: trimmedName,
+            name: trimmedName,
+            username: trimmedEmail.split("@")[0],
+            role: "Farmer",
+          },
+        },
+      });
+
+      if (error) {
+        // Also call backend register if needed as fallback
+        try {
+          const res = await fetch("/api/register/request-otp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password }),
+          });
+          const bData = await res.json();
+          if (res.ok && bData.status === "success") {
+            return { success: true, message: bData.message };
+          }
+        } catch {}
+
+        return { success: false, error: error.message || "Failed to initiate registration." };
       }
 
-      return { success: true, message: data.message };
+      // Check if user session was returned immediately (e.g. autoconfirm enabled)
+      if (data && (data.session || (data.user && data.user.confirmed_at))) {
+        const supaUser = data.user;
+        const token = data.session?.access_token;
+        if (token) {
+          localStorage.setItem("seediq_supabase_token", token);
+        }
+        const authenticatedUser: User = {
+          id: supaUser?.id || `supa_${Date.now()}`,
+          username: supaUser?.user_metadata?.username || trimmedEmail.split("@")[0],
+          email: supaUser?.email || trimmedEmail,
+          name: trimmedName,
+          display_name: trimmedName,
+          role: "Farmer",
+          isGuest: false,
+          provider: "supabase",
+        };
+        setUser(authenticatedUser);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
+        await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+        return { success: true, message: "Account created successfully!" };
+      }
+
+      // Also notify backend so telemetry / audit is recorded
+      fetch("/api/register/request-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password }),
+      }).catch(() => {});
+
+      return {
+        success: true,
+        message: `Supabase confirmation email & verification code sent to ${trimmedEmail}. Please check your inbox.`,
+      };
     } catch (e: any) {
-      return { success: false, error: e?.message || "Failed to contact server." };
+      return { success: false, error: e?.message || "Registration failed." };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 3. Verify OTP & Complete Registration
+  // 3. Verify OTP & Complete Registration via Supabase Auth
   const verifyRegistrationOtp = async (
     email: string,
     otp: string
   ): Promise<{ success: boolean; user?: User; error?: string }> => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/register/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          otp: otp.trim(),
-        }),
-      });
-      const data = await res.json();
+      const trimmedEmail = email.trim().toLowerCase();
+      const trimmedOtp = otp.trim();
 
-      if (!res.ok || data.status === "error") {
-        return { success: false, error: data.message || "Invalid or expired verification code." };
+      // 1. Direct Supabase GoTrue OTP verification
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: trimmedEmail,
+        token: trimmedOtp,
+        type: "signup",
+      });
+
+      if (!error && data && (data.user || data.session)) {
+        const supaUser = data.user;
+        const token = data.session?.access_token;
+        if (token) {
+          localStorage.setItem("seediq_supabase_token", token);
+        }
+
+        const username = supaUser?.user_metadata?.username || trimmedEmail.split("@")[0];
+        const displayName =
+          supaUser?.user_metadata?.display_name || supaUser?.user_metadata?.name || username;
+
+        const authenticatedUser: User = {
+          id: supaUser?.id || `supa_${Date.now()}`,
+          username: username,
+          email: supaUser?.email || trimmedEmail,
+          name: displayName,
+          display_name: displayName,
+          role: (supaUser?.user_metadata?.role as UserRole) || "Farmer",
+          isGuest: false,
+          provider: "supabase",
+        };
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
+        setUser(authenticatedUser);
+
+        // Notify backend of verified session in background
+        fetch("/api/register/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: trimmedEmail, otp: trimmedOtp }),
+        }).catch(() => {});
+
+        await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+        return { success: true, user: authenticatedUser };
       }
 
-      const backendUser = data.user;
-      const authenticatedUser: User = {
-        id: backendUser.id,
-        username: backendUser.username,
-        email: backendUser.email,
-        name: backendUser.display_name || backendUser.username,
-        display_name: backendUser.display_name || backendUser.username,
-        role: backendUser.role || "Farmer",
-        isGuest: false,
-        provider: "local",
-      };
+      // 2. Secondary fallback via backend /api/register/verify-otp
+      try {
+        const res = await fetch("/api/register/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: trimmedEmail,
+            otp: trimmedOtp,
+          }),
+        });
+        const backendData = await res.json();
 
-      setUser(authenticatedUser);
-      // Trigger logged in animation on verification completion!
-      await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
-      return { success: true, user: authenticatedUser };
+        if (res.ok && backendData.status === "success" && backendData.user) {
+          const backendUser = backendData.user;
+          const authenticatedUser: User = {
+            id: backendUser.id,
+            username: backendUser.username,
+            email: backendUser.email,
+            name: backendUser.display_name || backendUser.username,
+            display_name: backendUser.display_name || backendUser.username,
+            role: backendUser.role || "Farmer",
+            isGuest: false,
+            provider: "supabase",
+          };
+
+          setUser(authenticatedUser);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
+          await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+          return { success: true, user: authenticatedUser };
+        }
+      } catch {}
+
+      return {
+        success: false,
+        error: error?.message || "Invalid or expired verification code. If you verified via email link, please Sign In.",
+      };
     } catch (e: any) {
       return { success: false, error: e?.message || "Verification failed." };
     } finally {
@@ -443,24 +558,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 4. Request Password Reset OTP
+  // 4. Request Password Reset via Supabase Auth
   const requestPasswordResetOtp = async (
     email: string
   ): Promise<{ success: boolean; message?: string; error?: string }> => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/forgot-password/request-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
-      });
-      const data = await res.json();
-
-      if (!res.ok || data.status === "error") {
-        return { success: false, error: data.message || "Failed to dispatch reset code." };
+      const trimmedEmail = email.trim().toLowerCase();
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail);
+      if (error) {
+        // Fallback to backend
+        try {
+          const res = await fetch("/api/forgot-password/request-otp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: trimmedEmail }),
+          });
+          const data = await res.json();
+          if (res.ok && data.status === "success") {
+            return { success: true, message: data.message };
+          }
+        } catch {}
+        return { success: false, error: error.message || "Failed to dispatch reset code." };
       }
 
-      return { success: true, message: data.message };
+      return {
+        success: true,
+        message: `Password reset instructions sent to ${trimmedEmail} via Supabase.`,
+      };
     } catch (e: any) {
       return { success: false, error: e?.message || "Failed to contact reset server." };
     } finally {
@@ -468,28 +593,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 5. Verify Password Reset OTP
+  // 5. Verify Password Reset OTP via Supabase Auth
   const verifyPasswordResetOtp = async (
     email: string,
     otp: string
   ): Promise<{ success: boolean; message?: string; error?: string }> => {
     setIsLoading(true);
     try {
+      const trimmedEmail = email.trim().toLowerCase();
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: trimmedEmail,
+        token: otp.trim(),
+        type: "recovery",
+      });
+
+      if (!error && data?.session?.access_token) {
+        localStorage.setItem("seediq_supabase_token", data.session.access_token);
+        return { success: true, message: "Code verified successfully." };
+      }
+
+      // Fallback to backend
       const res = await fetch("/api/forgot-password/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: email.trim().toLowerCase(),
+          email: trimmedEmail,
           otp: otp.trim(),
         }),
       });
-      const data = await res.json();
+      const bData = await res.json();
 
-      if (!res.ok || data.status === "error") {
-        return { success: false, error: data.message || "Invalid or expired code." };
+      if (!res.ok || bData.status === "error") {
+        return { success: false, error: error?.message || bData.message || "Invalid or expired code." };
       }
 
-      return { success: true, message: data.message };
+      return { success: true, message: bData.message };
     } catch (e: any) {
       return { success: false, error: e?.message || "Code verification failed." };
     } finally {
@@ -497,7 +635,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 6. Reset Password with verified OTP
+  // 6. Reset Password via Supabase Auth
   const resetPassword = async (
     email: string,
     otp: string,
@@ -505,6 +643,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ): Promise<{ success: boolean; message?: string; error?: string }> => {
     setIsLoading(true);
     try {
+      const token = localStorage.getItem("seediq_supabase_token");
+      if (token) {
+        const { error } = await supabase.auth.updateUser(token, { password: newPassword });
+        if (!error) {
+          return { success: true, message: "Password updated successfully in Supabase." };
+        }
+      }
+
+      // Fallback to backend
       const res = await fetch("/api/forgot-password/reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

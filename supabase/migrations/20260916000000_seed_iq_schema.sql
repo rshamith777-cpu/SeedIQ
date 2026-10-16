@@ -329,11 +329,11 @@ ALTER TABLE public.test_runs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.test_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 
--- Profiles: user reads/updates own, Admin reads all
+-- Profiles: user reads/updates own, authenticated users read profiles without recursion
 CREATE POLICY "profiles_select_policy" ON public.profiles
     FOR SELECT USING (
         auth.uid() = id OR 
-        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('Admin', 'Researcher'))
+        auth.role() = 'authenticated'
     );
 
 CREATE POLICY "profiles_update_policy" ON public.profiles

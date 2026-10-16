@@ -3,9 +3,16 @@ import sys
 import os
 import time
 
+def get_python_executable():
+    venv_py = os.path.join(os.getcwd(), ".venv", "Scripts", "python.exe")
+    if os.path.exists(venv_py):
+        return venv_py
+    return sys.executable
+
 def main():
-    print("Starting SeedIQ Backend (Flask)...")
-    backend_process = subprocess.Popen([sys.executable, "app.py"], cwd=os.path.join(os.getcwd(), "SeedIQ"))
+    python_exe = get_python_executable()
+    print(f"Starting SeedIQ Backend (Flask) using {python_exe}...")
+    backend_process = subprocess.Popen([python_exe, "app.py"], cwd=os.path.join(os.getcwd(), "SeedIQ"))
     
     print("Starting SeedIQ Frontend (React SSR dev mode)...")
     frontend_process = subprocess.Popen(["npm", "run", "dev"], cwd=os.path.join(os.getcwd(), "seediq-frontend"), shell=True)
@@ -17,7 +24,7 @@ def main():
             time.sleep(2)
             if backend_process.poll() is not None:
                 print("\n[start.py] Backend process exited. Auto-restarting Flask backend...")
-                backend_process = subprocess.Popen([sys.executable, "app.py"], cwd=os.path.join(os.getcwd(), "SeedIQ"))
+                backend_process = subprocess.Popen([python_exe, "app.py"], cwd=os.path.join(os.getcwd(), "SeedIQ"))
             if frontend_process.poll() is not None:
                 print("\n[start.py] Frontend process exited. Auto-restarting frontend dev server...")
                 frontend_process = subprocess.Popen(["npm", "run", "dev"], cwd=os.path.join(os.getcwd(), "seediq-frontend"), shell=True)

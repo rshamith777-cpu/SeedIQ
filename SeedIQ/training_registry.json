@@ -1747,5 +1747,28 @@
         },
         "output_path": "C:\\Users\\SUMITH R\\Desktop\\SeedIQ1\\SeedIQ\\models\\svm_model.pkl",
         "status": "Trained & Saved"
+    },
+    {
+        "timestamp": "2026-10-15 23:40:41",
+        "model_name": "xgb_model.pkl",
+        "dataset_path": "data/Crop_Yield_Prediction.csv + data/crop-yield.csv",
+        "algorithm": "XGBoost Regressor + Quantum Ensemble",
+        "features": [
+            "crop_code",
+            "Nitrogen",
+            "Phosphorus",
+            "Potassium",
+            "Temperature",
+            "Humidity",
+            "pH",
+            "Rainfall"
+        ],
+        "target": "Crop_Yield_ton_per_hectare",
+        "metrics": {
+            "R2_Score": "0.9945",
+            "MAE": "1.2647"
+        },
+        "output_path": "models/xgb_model.pkl",
+        "status": "Trained & Saved"
     }
 ]

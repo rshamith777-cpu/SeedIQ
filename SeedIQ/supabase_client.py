@@ -9,8 +9,16 @@ import json
 import logging
 import requests
 import datetime
+import socket
 from typing import Dict, Any, Optional, List, Tuple
 from requests.adapters import HTTPAdapter
+import urllib3.util.connection as urllib3_cn
+
+# Force IPv4 resolution to eliminate Windows dual-stack IPv6 DNS delays
+def _allowed_gai_family():
+    return socket.AF_INET
+
+urllib3_cn.allowed_gai_family = _allowed_gai_family
 
 logger = logging.getLogger("seediq.supabase")
 
@@ -155,6 +163,28 @@ class SupabaseClient:
             return (resp.status_code in [200, 204]), data
         except Exception as e:
             logger.error(f"Supabase recover_password exception: {e}")
+            return False, {"error": str(e)}
+
+    def verify_otp(self, email: str, token: str, type: str = "signup") -> Tuple[bool, Dict[str, Any]]:
+        """
+        Verifies email OTP token via Supabase Auth GoTrue endpoint /auth/v1/verify.
+        """
+        endpoint = f"{self.url}/auth/v1/verify"
+        payload = {
+            "email": email.strip().lower(),
+            "token": token.strip(),
+            "type": type
+        }
+        try:
+            resp = self.session.post(endpoint, json=payload, headers=self._get_headers(), timeout=DEFAULT_TIMEOUT)
+            data = resp.json() if resp.text else {}
+            if resp.status_code in [200, 201]:
+                return True, data
+            else:
+                msg = data.get("msg") or data.get("message") or data.get("error_description") or "Invalid verification code"
+                return False, {"error": msg, "statusCode": resp.status_code}
+        except Exception as e:
+            logger.error(f"Supabase verify_otp exception: {e}")
             return False, {"error": str(e)}
 
     # --------------------------------------------------------------------------

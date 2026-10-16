@@ -61,8 +61,10 @@ Thumbs.db
 
 # Backups & Temporary files
 *.bak
+*.backup_*
 backups/
 SeedIQ/backups/
+backend/
 SeedIQ/data/temp_uploads/
 SeedIQ/data/2026*
 SeedIQ/data/*_processed.csv
