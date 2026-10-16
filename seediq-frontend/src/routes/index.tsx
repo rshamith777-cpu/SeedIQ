@@ -175,11 +175,41 @@ function SeedIQHomepage() {
   });
 
   const handleCloseIntro = () => {
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+      } catch {}
+    }
     if (typeof window !== "undefined") {
       localStorage.setItem("seedIqIntroSeen", "true");
     }
     setShowIntroVideo(false);
   };
+
+  // Keyboard shortcut listener to skip intro (ESC, Space, Enter)
+  useEffect(() => {
+    if (!showIntroVideo) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" || e.key === " " || e.key === "Enter") {
+        handleCloseIntro();
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [showIntroVideo]);
+
+  // Ensure that landing on the homepage starts in a clean unauthenticated state
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("seediq_auth_user");
+      localStorage.removeItem("seediq_supabase_token");
+      localStorage.removeItem("seediq_guest_expires_at");
+      sessionStorage.clear();
+    }
+    if (user) {
+      logout();
+    }
+  }, []);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedDistrictId, setSelectedDistrictId] = useState<string>("Mandya");
   const [activeCircuitQubit, setActiveCircuitQubit] = useState<number>(0);
@@ -225,8 +255,8 @@ function SeedIQHomepage() {
           <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black overflow-hidden"
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 z-[999999] flex items-center justify-center bg-black overflow-hidden select-none"
           >
             <video
               ref={videoRef}
@@ -234,16 +264,20 @@ function SeedIQHomepage() {
               muted
               playsInline
               onEnded={handleCloseIntro}
-              className="absolute inset-0 h-full w-full object-cover opacity-90"
+              onClick={handleCloseIntro}
+              className="absolute inset-0 h-full w-full object-cover opacity-90 cursor-pointer"
             >
               <source src="/intro_plant.mp4" type="video/mp4" />
             </video>
 
-            {/* Subtle cinematic gradient vignette */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60 pointer-events-none" />
+            {/* Subtle cinematic gradient vignette (click to skip) */}
+            <div
+              onClick={handleCloseIntro}
+              className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60 cursor-pointer"
+            />
 
             {/* Top Brand Banner during Intro */}
-            <div className="absolute top-8 left-8 flex items-center gap-3 z-10 pointer-events-none">
+            <div className="absolute top-6 left-6 md:top-8 md:left-8 flex items-center gap-3 z-[1000000] pointer-events-none">
               <div className="h-10 w-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 grid place-items-center text-emerald-400 backdrop-blur-md">
                 <Sprout className="h-5 w-5 animate-pulse" />
               </div>
@@ -257,14 +291,44 @@ function SeedIQHomepage() {
               </div>
             </div>
 
-            {/* Skip Intro CTA Button */}
+            {/* Top-Right Quick Skip Button */}
             <button
-              onClick={handleCloseIntro}
-              className="absolute bottom-8 right-8 z-10 flex items-center gap-2 px-5 py-2.5 rounded-full bg-black/60 hover:bg-emerald-500 hover:text-black border border-white/20 text-xs font-mono font-bold text-white uppercase tracking-widest backdrop-blur-xl transition-all hover:scale-105 shadow-[0_0_30px_rgba(0,0,0,0.8)] cursor-pointer"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCloseIntro();
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                handleCloseIntro();
+              }}
+              className="absolute top-6 right-6 md:top-8 md:right-8 z-[1000001] flex items-center gap-2 px-4 py-2 rounded-full bg-black/80 hover:bg-emerald-500 hover:text-black border border-white/30 text-xs font-mono font-bold text-white uppercase tracking-wider backdrop-blur-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.8)] cursor-pointer active:scale-95"
             >
-              <span>SKIP INTRO</span>
-              <X className="h-3.5 w-3.5" />
+              <span>SKIP</span>
+              <X className="h-4 w-4" />
             </button>
+
+            {/* Bottom Floating Bar with Skip & Hint */}
+            <div className="absolute bottom-6 inset-x-6 md:bottom-8 md:inset-x-8 flex items-center justify-between z-[1000001] pointer-events-none">
+              <div className="hidden sm:flex items-center gap-2 text-xs text-white/60 font-mono bg-black/40 px-3.5 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
+                <span>Click anywhere or press <kbd className="px-1.5 py-0.5 rounded bg-white/20 text-white text-[10px]">ESC</kbd> to skip</span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCloseIntro();
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                  handleCloseIntro();
+                }}
+                className="pointer-events-auto ml-auto flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black border border-emerald-300 text-xs font-mono font-extrabold uppercase tracking-widest backdrop-blur-xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_35px_rgba(16,185,129,0.5)] cursor-pointer"
+              >
+                <span>SKIP INTRO</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
