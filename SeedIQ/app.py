@@ -17,6 +17,16 @@ from werkzeug.utils import secure_filename
 import socket
 import requests
 
+try:
+    from seed_physiology_engine import evaluate_seed_viability, get_crop_physiology, CROP_SEED_PHYSIOLOGY
+except ImportError:
+    try:
+        from SeedIQ.seed_physiology_engine import evaluate_seed_viability, get_crop_physiology, CROP_SEED_PHYSIOLOGY
+    except ImportError:
+        evaluate_seed_viability = None
+        get_crop_physiology = None
+        CROP_SEED_PHYSIOLOGY = {}
+
 # Optimize network DNS on Windows to avoid 10-second IPv6 fallback delays
 try:
     _orig_getaddrinfo = socket.getaddrinfo
@@ -2520,7 +2530,6 @@ def yield_prediction():
 def seed_viability():
     user_id = session.get('user_id') if not session.get('is_guest') else None
         
-    result = None
     if request.method == 'POST':
         req_data = request.get_json() if request.is_json else request.form
         crop = req_data.get('crop', 'Wheat')
@@ -2528,57 +2537,72 @@ def seed_viability():
         weight = float(req_data.get('weight', 42.5))
         storage_temp = float(req_data.get('storageTemp', req_data.get('storage_temp', 18.0)))
         storage_hum = float(req_data.get('storageHum', req_data.get('storage_hum', 45.0)))
+        seed_grade = req_data.get('seedGrade', req_data.get('seed_grade', 'Certified Seed'))
         
+        # 1. Biological seed physiological evaluation across all 120+ crops
+        eval_data = {}
+        if evaluate_seed_viability:
+            try:
+                eval_data = evaluate_seed_viability(crop, moisture, weight, storage_temp, storage_hum, seed_grade)
+            except Exception as ex:
+                print(f"Error in evaluate_seed_viability: {ex}")
+
+        ensemble_str = eval_data.get('ensemble', 'Viable' if (moisture <= 12.5 and weight >= 38.0) else 'Non-Viable')
+        
+        # 2. Check legacy classical SVM if crop is Wheat and weight is within classical range
         global svm_model, seed_scaler, vqc_seed_model
         if not svm_model: svm_model = load_helper('svm_model.pkl')
         if not seed_scaler: seed_scaler = load_helper('seed_scaler.pkl')
         if not vqc_seed_model: vqc_seed_model = load_helper('vqc_seed_model.pkl')
         
-        pred_svm_str = "Viable"
-        if svm_model and seed_scaler:
+        pred_svm_str = ensemble_str
+        if svm_model and seed_scaler and crop.lower() == 'wheat' and weight > 20.0:
             try:
-                features = pd.DataFrame([[moisture, weight]], 
-                                        columns=['Moisture_Level', 'Weight_g'])
+                features = pd.DataFrame([[moisture, weight]], columns=['Moisture_Level', 'Weight_g'])
                 scaled_features = seed_scaler.transform(features)
-                
-                # Classical SVM trained on seed_viability_data.csv
                 pred_svm = svm_model.predict(scaled_features)[0]
                 pred_svm_str = "Viable" if pred_svm == 1 else "Non-Viable"
             except Exception as e:
-                print(f"Seed viability model prediction error: {e}")
-                # Fallback based on ISTA seed moisture standards
-                pred_svm_str = "Viable" if (moisture <= 12.5 and weight >= 38.0) else "Non-Viable"
-        else:
-            pred_svm_str = "Viable" if (moisture <= 12.5 and weight >= 38.0) else "Non-Viable"
+                print(f"Classical seed model warning: {e}")
         
-        # Environmental storage synergy penalty (high humidity or temp accelerates aging)
-        if storage_temp > 25.0 or storage_hum > 65.0 or moisture > 13.5:
-            ensemble_str = "Non-Viable"
-        else:
-            ensemble_str = pred_svm_str
-            
-        pred_qml_str = ensemble_str
-        
-        result = {
+        result_payload = {
+            'crop': crop,
+            'moisture': moisture,
+            'weight': weight,
+            'storage_temp': storage_temp,
+            'storage_hum': storage_hum,
             'classical': pred_svm_str,
-            'quantum': pred_qml_str,
-            'ensemble': ensemble_str
+            'quantum': ensemble_str,
+            'ensemble': ensemble_str,
+            **eval_data
         }
         
         log_prediction(user_id, 'seed', {
             'crop': crop, 'moisture': moisture, 'weight': weight,
             'storage_temp': storage_temp, 'storage_hum': storage_hum
-        }, result)
+        }, result_payload)
             
         return jsonify({
-            'result': result,
-            'ensemble': ensemble_str,
-            'classical': pred_svm_str,
-            'quantum': pred_qml_str,
-            'is_optimal': (ensemble_str == "Viable"),
-            'crop': crop
+            'result': result_payload,
+            **result_payload
+        })
+    elif request.method == 'GET':
+        crop = request.args.get('crop', 'Wheat')
+        phys = get_crop_physiology(crop) if get_crop_physiology else {}
+        return jsonify({
+            'crop': crop,
+            'profile': phys
         })
     return jsonify({"error": "Method not allowed"}), 405
+
+@app.route('/api/seed-crop-profile', methods=['GET'])
+def seed_crop_profile():
+    crop = request.args.get('crop', 'Wheat')
+    phys = get_crop_physiology(crop) if get_crop_physiology else {}
+    return jsonify({
+        'crop': crop,
+        'profile': phys
+    })
 
 @app.route('/api/storage-recommendation', methods=['GET', 'POST'])
 def storage_recommendation():
