@@ -1,11 +1,11 @@
 [
   {
     "username": "rshamith777",
-    "password": "scrypt:32768:8:1$m7Tv1cJ8B0q85J5p$ed22e71bb79c7ce571f0bac68094fe028eb4c7861efa96d2045bb359771552066295107b4c4b18fd5ca81381166dcb45373805be83511763d5b700bbf3826863",
+    "password": "scrypt:32768:8:1$Ym5jMaomHm6uHD0K$7c8cb2a157aa45b7c72f8dcb21914b61a099d68ef458a921cdc1569bc2d9e46f907f6abf5168c4bce61635910837190df2ac435f4bbcfb7873c28e1604d8a279",
     "email": "rshamith777@gmail.com",
-    "display_name": "r",
+    "display_name": "R Shamith",
     "role": "Farmer",
-    "provider": "supabase_auth"
+    "provider": "email"
   },
   {
     "username": "admin",

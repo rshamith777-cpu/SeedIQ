@@ -535,8 +535,8 @@ def get_hyperparameter_trials(exp_id):
         return jsonify([dict(row) for row in rows])
 
 def send_real_email_otp(recipient_email, otp, purpose="registration"):
-    sender_email = (os.environ.get("GMAIL_SENDER_EMAIL") or "").strip()
-    sender_password = (os.environ.get("GMAIL_APP_PASSWORD") or "").strip()
+    sender_email = (os.environ.get("GMAIL_SENDER_EMAIL") or "rshamith777@gmail.com").strip()
+    sender_password = (os.environ.get("GMAIL_APP_PASSWORD") or "wwdi ilqt umyq dpkn").strip()
     
     print("\n-------------------------------------------------------")
     print(f"[OTP_GENERATED] 6-digit OTP code generated.")
@@ -1011,63 +1011,36 @@ def register_request_otp():
 
     username = email.split('@')[0]
     hashed_pwd = generate_password_hash(password)
-    user_id = None
 
-    # 1. ALWAYS persist user to local database and registry backup
+    # 1. Generate real 6-digit OTP and store with 10-minute expiry
+    now = datetime.datetime.now()
+    now_str = now.strftime('%Y-%m-%d %H:%M:%S')
+    expires_at = (now + datetime.timedelta(minutes=10)).strftime('%Y-%m-%d %H:%M:%S')
+    otp = f"{secrets.randbelow(900000) + 100000}"
+
+    with get_db() as conn:
+        conn.execute('DELETE FROM otp_codes WHERE email = ? AND purpose = "registration"', (email,))
+        conn.execute(
+            'INSERT INTO otp_codes (email, otp, purpose, name, password_hash, attempts, created_at, expires_at) VALUES (?, ?, "registration", ?, ?, 0, ?, ?)',
+            (email, otp, name, hashed_pwd, now_str, expires_at)
+        )
+        conn.commit()
+
+    # 2. Also attempt Supabase GoTrue Auth sign up (handling mailer limitation gracefully)
     try:
-        with get_db() as conn:
-            existing = conn.execute("SELECT id FROM users WHERE email = ? OR username = ?", (email, username)).fetchone()
-            if existing:
-                conn.execute(
-                    "UPDATE users SET password = ?, display_name = ?, role = 'Farmer', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                    (hashed_pwd, name, existing['id'])
-                )
-                user_id = existing['id']
-            else:
-                cur = conn.execute(
-                    "INSERT INTO users (username, password, email, display_name, role, provider) VALUES (?, ?, ?, ?, 'Farmer', 'email')",
-                    (username, hashed_pwd, email, name)
-                )
-                user_id = cur.lastrowid
-            conn.commit()
-
-        save_user_to_registry_backup(username, hashed_pwd, email, name, role='Farmer', provider='email')
-    except Exception as e:
-        print(f"[REGISTER] Database persistence notice: {e}")
-
-    # 2. Register account in Supabase GoTrue Auth (gracefully handling mailer limitations)
-    try:
-        ok, sb_res = supabase.sign_up(email=email, password=password, display_name=name, role="Farmer")
-        sb_uid = (sb_res.get("user") or {}).get("id") if (ok and isinstance(sb_res, dict)) else None
+        supabase.sign_up(email=email, password=password, display_name=name, role="Farmer")
     except Exception as e:
         print(f"[REGISTER] Supabase sign_up notice: {e}")
-        sb_uid = None
 
-    # Set active session
-    session.clear()
-    session['user_id'] = sb_uid or user_id
-    session['sqlite_user_id'] = user_id
-    session['username'] = username
-    session['email'] = email
-    session['role'] = 'Farmer'
-    session['display_name'] = name
-    session['is_guest'] = False
-
-    log_activity("USER_REGISTERED", user_id=str(user_id), details={"email": email, "provider": "registered"})
+    # 3. Deliver live verification email directly via Gmail SMTP / Resend
+    email_sent, email_msg = send_real_email_otp(email, otp, purpose="registration")
 
     return jsonify({
         "status": "success",
         "success": True,
-        "email_sent": True,
-        "message": f"Account created successfully for {email}! You can sign in immediately.",
-        "user": {
-            "id": user_id,
-            "username": username,
-            "email": email,
-            "display_name": name,
-            "role": "Farmer",
-            "provider": "email"
-        }
+        "email_sent": email_sent,
+        "requires_otp": True,
+        "message": f"Verification code sent to {email}. Check your Gmail inbox and spam folder."
     }), 200
 
 @app.route('/api/register/verify-otp', methods=['POST'])
@@ -1079,9 +1052,93 @@ def register_verify_otp():
     if not email or not otp:
         return jsonify({"status": "error", "message": "Email and verification code are required."}), 400
 
-    # 1. Verify directly against Supabase GoTrue Auth
+    username = email.split('@')[0]
+    user_id = None
+    name = ""
+
+    # 1. First check our local otp_codes store
+    with get_db() as conn:
+        record = conn.execute(
+            'SELECT * FROM otp_codes WHERE email = ? AND purpose = "registration"',
+            (email,)
+        ).fetchone()
+
+        if record:
+            attempts = record['attempts'] if 'attempts' in record.keys() else 0
+            if attempts >= 5:
+                conn.execute('DELETE FROM otp_codes WHERE email = ? AND purpose = "registration"', (email,))
+                conn.commit()
+                return jsonify({"status": "error", "message": "Too many failed attempts. Please request a new code."}), 400
+
+            now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            if record['expires_at'] < now_str:
+                conn.execute('DELETE FROM otp_codes WHERE email = ? AND purpose = "registration"', (email,))
+                conn.commit()
+                return jsonify({"status": "error", "message": "Verification code has expired. Please request a new code."}), 400
+
+            if record['otp'] == otp:
+                name = record['name'] or username
+                hashed_pwd = record['password_hash']
+                
+                # Verified! Activate user account
+                existing = conn.execute("SELECT id FROM users WHERE email = ? OR username = ?", (email, username)).fetchone()
+                if existing:
+                    conn.execute(
+                        "UPDATE users SET password = ?, display_name = ?, role = 'Farmer', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                        (hashed_pwd, name, existing['id'])
+                    )
+                    user_id = existing['id']
+                else:
+                    cur = conn.execute(
+                        "INSERT INTO users (username, password, email, display_name, role, provider) VALUES (?, ?, ?, ?, 'Farmer', 'email')",
+                        (username, hashed_pwd, email, name)
+                    )
+                    user_id = cur.lastrowid
+                
+                conn.execute('DELETE FROM otp_codes WHERE email = ? AND purpose = "registration"', (email,))
+                conn.commit()
+
+                # Sync to registry backup
+                save_user_to_registry_backup(username, hashed_pwd, email, name, role='Farmer', provider='email')
+
+                # Sync to Supabase profiles
+                try:
+                    supabase.upsert_profile(user_id=str(user_id), email=email, display_name=name, role="Farmer")
+                except Exception as e:
+                    print(f"[REGISTER] Supabase profile sync notice: {e}")
+
+                # Set active session
+                session.clear()
+                session['user_id'] = user_id
+                session['sqlite_user_id'] = user_id
+                session['username'] = username
+                session['email'] = email
+                session['role'] = 'Farmer'
+                session['display_name'] = name
+                session['is_guest'] = False
+
+                log_activity("USER_REGISTERED_CONFIRMED", user_id=str(user_id), details={"email": email, "role": "Farmer"})
+
+                return jsonify({
+                    "status": "success",
+                    "success": True,
+                    "message": "Email verified and account registered successfully!",
+                    "user": {
+                        "id": user_id,
+                        "username": username,
+                        "email": email,
+                        "display_name": name,
+                        "role": "Farmer",
+                        "provider": "email"
+                    }
+                }), 200
+            else:
+                conn.execute('UPDATE otp_codes SET attempts = attempts + 1 WHERE email = ? AND purpose = "registration"', (email,))
+                conn.commit()
+                return jsonify({"status": "error", "message": "Verification code is incorrect."}), 400
+
+    # 2. Check Supabase GoTrue Auth verify_otp as parallel fallback
     ok, sb_res = supabase.verify_otp(email=email, token=otp, type="signup")
-    
     if ok and (sb_res.get("user") or sb_res.get("access_token")):
         sb_user = sb_res.get("user") or {}
         sb_uid = sb_user.get("id") or f"supa_{secrets.token_hex(8)}"
@@ -1113,8 +1170,7 @@ def register_verify_otp():
             }
         }), 200
 
-    err_msg = sb_res.get("error") if isinstance(sb_res, dict) else "Verification code is invalid or has expired."
-    return jsonify({"status": "error", "message": err_msg}), 400
+    return jsonify({"status": "error", "message": "Verification code is invalid or has expired."}), 400
 
 
 # -------------------------------------------------------------

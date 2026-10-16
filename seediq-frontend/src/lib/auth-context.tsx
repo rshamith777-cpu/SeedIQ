@@ -383,8 +383,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const trimmedEmail = email.trim().toLowerCase();
       const trimmedName = name.trim();
 
-      // 1. Direct Supabase GoTrue Auth Sign Up (cloud sync)
+      // 1. Dispatch OTP verification email via SeedIQ live Gmail SMTP / Resend service
       try {
+        const res = await fetch("/api/register/request-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password }),
+        });
+        const bData = await res.json();
+
+        // Also notify Supabase GoTrue Auth in parallel to provision cloud identity
+        supabase.auth.signUp({
+          email: trimmedEmail,
+          password: password,
+          options: {
+            data: {
+              display_name: trimmedName,
+              name: trimmedName,
+              username: trimmedEmail.split("@")[0],
+              role: "Farmer",
+            },
+          },
+        }).catch((err) => {
+          console.warn("[SUPABASE_SIGNUP] Supabase notice:", err);
+        });
+
+        if (res.ok && bData.status === "success") {
+          return {
+            success: true,
+            message: bData.message || `Verification code sent to ${trimmedEmail}. Please check your inbox and spam folder.`,
+          };
+        } else if (bData && bData.message) {
+          return { success: false, error: bData.message };
+        }
+      } catch (err: any) {
+        // Network fallback: try Supabase client directly
         const { data, error } = await supabase.auth.signUp({
           email: trimmedEmail,
           password: password,
@@ -397,67 +430,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             },
           },
         });
-        if (!error && data && (data.session || (data.user && data.user.confirmed_at))) {
-          const supaUser = data.user;
-          const token = data.session?.access_token;
-          if (token) {
-            localStorage.setItem("seediq_supabase_token", token);
-          }
-          const authenticatedUser: User = {
-            id: supaUser?.id || `supa_${Date.now()}`,
-            username: supaUser?.user_metadata?.username || trimmedEmail.split("@")[0],
-            email: supaUser?.email || trimmedEmail,
-            name: trimmedName,
-            display_name: trimmedName,
-            role: "Farmer",
-            isGuest: false,
-            provider: "supabase",
-          };
-          setUser(authenticatedUser);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
-          await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
-          return { success: true, message: "Account created successfully!" };
-        }
-      } catch {}
-
-      // 2. Guaranteed backend registration (persists password hash in DB + registry backup)
-      try {
-        const res = await fetch("/api/register/request-otp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password }),
-        });
-        const bData = await res.json();
-        if (res.ok && bData.status === "success") {
-          if (bData.user) {
-            const backendUser = bData.user;
-            const authenticatedUser: User = {
-              id: backendUser.id,
-              username: backendUser.username || trimmedEmail.split("@")[0],
-              email: backendUser.email || trimmedEmail,
-              name: backendUser.display_name || trimmedName,
-              display_name: backendUser.display_name || trimmedName,
-              role: "Farmer",
-              isGuest: false,
-              provider: "supabase",
+        if (error) {
+          if (error.message && error.message.includes("Error sending confirmation email")) {
+            return {
+              success: false,
+              error: "Supabase email delivery rate limit reached. Please ensure custom SMTP is configured in your Supabase project settings.",
             };
-            setUser(authenticatedUser);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
           }
-          return {
-            success: true,
-            message: bData.message || "Account created successfully! You can sign in immediately.",
-          };
-        } else if (bData && bData.message) {
-          return { success: false, error: bData.message };
+          return { success: false, error: error.message };
         }
-      } catch (err: any) {
-        return { success: false, error: err?.message || "Failed to register account." };
+        return {
+          success: true,
+          message: `Verification code sent to ${trimmedEmail}. Please check your inbox and spam folder.`,
+        };
       }
 
       return {
         success: true,
-        message: `Account created successfully for ${trimmedEmail}! You can sign in immediately.`,
+        message: `Verification code sent to ${trimmedEmail}. Please check your inbox and spam folder.`,
       };
     } catch (e: any) {
       return { success: false, error: e?.message || "Registration failed." };
@@ -466,7 +456,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 3. Verify OTP & Complete Registration via Supabase Auth
+  // 3. Verify OTP & Complete Registration via SeedIQ Backend & Supabase
   const verifyRegistrationOtp = async (
     email: string,
     otp: string
@@ -476,58 +466,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const trimmedEmail = email.trim().toLowerCase();
       const trimmedOtp = otp.trim();
 
-      // 1. Direct Supabase GoTrue OTP verification
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: trimmedEmail,
-        token: trimmedOtp,
-        type: "signup",
-      });
-
-      if (!error && data && (data.user || data.session)) {
-        const supaUser = data.user;
-        const token = data.session?.access_token;
-        if (token) {
-          localStorage.setItem("seediq_supabase_token", token);
-        }
-
-        const username = supaUser?.user_metadata?.username || trimmedEmail.split("@")[0];
-        const displayName =
-          supaUser?.user_metadata?.display_name || supaUser?.user_metadata?.name || username;
-
-        const authenticatedUser: User = {
-          id: supaUser?.id || `supa_${Date.now()}`,
-          username: username,
-          email: supaUser?.email || trimmedEmail,
-          name: displayName,
-          display_name: displayName,
-          role: (supaUser?.user_metadata?.role as UserRole) || "Farmer",
-          isGuest: false,
-          provider: "supabase",
-        };
-
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
-        setUser(authenticatedUser);
-
-        // Notify backend of verified session in background
-        fetch("/api/register/verify-otp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: trimmedEmail, otp: trimmedOtp }),
-        }).catch(() => {});
-
-        await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
-        return { success: true, user: authenticatedUser };
-      }
-
-      // 2. Secondary fallback via backend /api/register/verify-otp
+      // 1. Primary verification via backend /api/register/verify-otp
       try {
         const res = await fetch("/api/register/verify-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: trimmedEmail,
-            otp: trimmedOtp,
-          }),
+          body: JSON.stringify({ email: trimmedEmail, otp: trimmedOtp }),
         });
         const backendData = await res.json();
 
@@ -546,14 +490,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           setUser(authenticatedUser);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
+
+          // Also attempt Supabase GoTrue OTP verification in background if token exists
+          supabase.auth.verifyOtp({ email: trimmedEmail, token: trimmedOtp, type: "signup" }).then(({ data }) => {
+            if (data?.session?.access_token) {
+              localStorage.setItem("seediq_supabase_token", data.session.access_token);
+            }
+          }).catch(() => {});
+
+          await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+          return { success: true, user: authenticatedUser };
+        } else if (backendData && backendData.message) {
+          // Check if Supabase verifyOtp can satisfy it directly
+          const { data: supaData, error: supaErr } = await supabase.auth.verifyOtp({
+            email: trimmedEmail,
+            token: trimmedOtp,
+            type: "signup",
+          });
+          if (!supaErr && supaData && (supaData.user || supaData.session)) {
+            const supaUser = supaData.user;
+            const token = supaData.session?.access_token;
+            if (token) localStorage.setItem("seediq_supabase_token", token);
+            const authenticatedUser: User = {
+              id: supaUser?.id || `supa_${Date.now()}`,
+              username: supaUser?.user_metadata?.username || trimmedEmail.split("@")[0],
+              email: supaUser?.email || trimmedEmail,
+              name: supaUser?.user_metadata?.display_name || trimmedEmail.split("@")[0],
+              display_name: supaUser?.user_metadata?.display_name || trimmedEmail.split("@")[0],
+              role: (supaUser?.user_metadata?.role as UserRole) || "Farmer",
+              isGuest: false,
+              provider: "supabase",
+            };
+            setUser(authenticatedUser);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
+            await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+            return { success: true, user: authenticatedUser };
+          }
+          return { success: false, error: backendData.message };
+        }
+      } catch (err: any) {
+        // Fallback: try Supabase directly
+        const { data: supaData, error: supaErr } = await supabase.auth.verifyOtp({
+          email: trimmedEmail,
+          token: trimmedOtp,
+          type: "signup",
+        });
+        if (!supaErr && supaData && (supaData.user || supaData.session)) {
+          const supaUser = supaData.user;
+          const token = supaData.session?.access_token;
+          if (token) localStorage.setItem("seediq_supabase_token", token);
+          const authenticatedUser: User = {
+            id: supaUser?.id || `supa_${Date.now()}`,
+            username: supaUser?.user_metadata?.username || trimmedEmail.split("@")[0],
+            email: supaUser?.email || trimmedEmail,
+            name: supaUser?.user_metadata?.display_name || trimmedEmail.split("@")[0],
+            display_name: supaUser?.user_metadata?.display_name || trimmedEmail.split("@")[0],
+            role: (supaUser?.user_metadata?.role as UserRole) || "Farmer",
+            isGuest: false,
+            provider: "supabase",
+          };
+          setUser(authenticatedUser);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
           await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
           return { success: true, user: authenticatedUser };
         }
-      } catch {}
+        return { success: false, error: supaErr?.message || "Verification code is invalid or has expired." };
+      }
 
       return {
         success: false,
-        error: error?.message || "Invalid or expired verification code. If you verified via email link, please Sign In.",
+        error: "Invalid or expired verification code. Please request a new code.",
       };
     } catch (e: any) {
       return { success: false, error: e?.message || "Verification failed." };
