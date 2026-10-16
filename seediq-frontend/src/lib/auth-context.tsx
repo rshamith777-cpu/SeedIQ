@@ -72,6 +72,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Sync session on mount with /api/me and Supabase
   useEffect(() => {
     const checkSession = async () => {
+      // If user has explicitly logged out, do not auto-restore session
+      const savedUserStr = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+      const supaToken = typeof window !== "undefined" ? localStorage.getItem("seediq_supabase_token") : null;
+      if (!savedUserStr && !supaToken) {
+        setUser(null);
+        return;
+      }
+
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 2500);
@@ -125,7 +133,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Check if there is an active Supabase cloud session token
-      const supaToken = localStorage.getItem("seediq_supabase_token");
       if (supaToken) {
         try {
           const supaUser = await supabase.auth.getUser(supaToken);
@@ -156,7 +163,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // If guest session in localStorage, check expiry
-      const savedUserStr = localStorage.getItem(STORAGE_KEY);
       if (savedUserStr) {
         try {
           const savedUser = JSON.parse(savedUserStr);
@@ -766,9 +772,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 8. Instant Logout with Zero Latency
+  // 8. Robust Logout
   const logout = async () => {
-    // 1. Immediately clear user state & local storage in 0ms
     setUser(null);
     setGuestTimeRemaining(null);
     setAuthTransition({ type: null, message: "" });
@@ -777,18 +782,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(GUEST_EXPIRY_KEY);
       localStorage.removeItem("seediq_supabase_token");
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith("sb-") || key.includes("supabase") || key.includes("seediq")) {
+          localStorage.removeItem(key);
+        }
+      });
       sessionStorage.clear();
     }
 
-    // 2. Fire and forget remote sessions in the background without blocking UI
     try {
-      supabase.auth.signOut().catch(() => {});
-      fetch("/api/logout", { method: "POST" }).catch(() => {});
+      await Promise.allSettled([
+        supabase.auth.signOut(),
+        fetch("/api/logout", { method: "POST" }),
+      ]);
     } catch {}
 
-    // 3. Instant navigation to login
     if (typeof window !== "undefined") {
-      window.location.href = "/login";
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(GUEST_EXPIRY_KEY);
+      localStorage.removeItem("seediq_supabase_token");
+      sessionStorage.clear();
+      window.location.replace("/login");
     }
   };
 
