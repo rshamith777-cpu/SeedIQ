@@ -250,14 +250,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthTransition({ type: null, message: "" });
   }, []);
 
-  // 1. Sign In with Email + Password via Supabase Auth
+  // 1. Sign In with Email / Username + Password via Supabase Auth & Backend Registry
   const signIn = async (
-    email: string,
+    emailOrUsername: string,
     password: string
   ): Promise<{ success: boolean; user?: User; error?: string }> => {
     setIsLoading(true);
     try {
-      const rawInput = email.trim().toLowerCase();
+      const rawInput = emailOrUsername.trim().toLowerCase();
       const normalizedEmail =
         rawInput === "admin"
           ? "admin@seediq.ai"
@@ -265,121 +265,114 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ? "researcher@quantum.org"
           : rawInput;
 
-      // 1. Primary: Direct Supabase GoTrue Auth
-      try {
-        const { data: supaData, error: supaError } = await supabase.auth.signInWithPassword({
-          email: normalizedEmail,
-          password,
-        });
+      // 1. Primary: Direct Supabase GoTrue Auth (if input has '@')
+      if (normalizedEmail.includes("@")) {
+        try {
+          const { data: supaData, error: supaError } = await supabase.auth.signInWithPassword({
+            email: normalizedEmail,
+            password,
+          });
 
-        if (!supaError && supaData && (supaData.user || supaData.access_token)) {
-          const supaUser = supaData.user || (supaData.access_token ? await supabase.auth.getUser(supaData.access_token) : null);
-          const token = supaData.access_token || supaData.session?.access_token;
-          if (token) {
-            localStorage.setItem("seediq_supabase_token", token);
-          }
+          if (!supaError && supaData && (supaData.user || supaData.access_token)) {
+            const supaUser = supaData.user || (supaData.access_token ? await supabase.auth.getUser(supaData.access_token) : null);
+            const token = supaData.access_token || supaData.session?.access_token;
+            if (token) {
+              localStorage.setItem("seediq_supabase_token", token);
+            }
 
-          const username = supaUser?.user_metadata?.username || normalizedEmail.split("@")[0];
-          const displayName = supaUser?.user_metadata?.display_name || supaUser?.user_metadata?.name || username;
-          const resolvedRole: UserRole =
-            normalizedEmail === "admin@seediq.ai" || username === "admin"
-              ? "Admin"
-              : normalizedEmail === "researcher@quantum.org" || username === "researcher"
-              ? "Researcher"
-              : (supaUser?.user_metadata?.role as UserRole) || "Farmer";
+            const username = supaUser?.user_metadata?.username || normalizedEmail.split("@")[0];
+            const displayName = supaUser?.user_metadata?.display_name || supaUser?.user_metadata?.name || username;
+            const resolvedRole: UserRole =
+              normalizedEmail === "admin@seediq.ai" || username === "admin"
+                ? "Admin"
+                : normalizedEmail === "researcher@quantum.org" || username === "researcher"
+                ? "Researcher"
+                : (supaUser?.user_metadata?.role as UserRole) || "Farmer";
 
-          const authenticatedUser: User = {
-            id: supaUser?.id || `supa_${Date.now()}`,
-            username: username,
-            email: supaUser?.email || normalizedEmail,
-            name: displayName,
-            display_name: displayName,
-            role: resolvedRole,
-            isGuest: false,
-            provider: "supabase",
-          };
-
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
-          setUser(authenticatedUser);
-          setIsLoading(false);
-
-          // Synchronize session with backend Flask in background (non-blocking)
-          fetch("/api/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: normalizedEmail, password }),
-          }).catch(() => {});
-
-          await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
-          return { success: true, user: authenticatedUser };
-        } else if (supaError) {
-          // If Supabase returned an explicit error (like Email not confirmed or Invalid login credentials)
-          const errText = supaError.message || "Invalid email or password.";
-          if (errText.toLowerCase().includes("email not confirmed")) {
-            setIsLoading(false);
-            return {
-              success: false,
-              error: "Please confirm your email address before signing in. Check your inbox for the Supabase verification link or code.",
+            const authenticatedUser: User = {
+              id: supaUser?.id || `supa_${Date.now()}`,
+              username: username,
+              email: supaUser?.email || normalizedEmail,
+              name: displayName,
+              display_name: displayName,
+              role: resolvedRole,
+              isGuest: false,
+              provider: "supabase",
             };
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
+            setUser(authenticatedUser);
+            setIsLoading(false);
+
+            // Synchronize session with backend in background
+            fetch("/api/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: normalizedEmail, password }),
+            }).catch(() => {});
+
+            await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+            return { success: true, user: authenticatedUser };
           }
+        } catch (err) {
+          // Fall through to backend API
         }
-      } catch (err) {
-        // Fallback to backend API if Supabase fetch failed
       }
 
-      // 2. Secondary fallback to backend /api/login
+      // 2. Secondary fallback to backend /api/login (verifies registered credentials & local DB)
       try {
         const res = await fetch("/api/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: normalizedEmail,
+            username: rawInput,
             password: password,
           }),
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.status === "success" && data.user) {
-            const backendUser = data.user;
-            const userEmail = (backendUser.email || normalizedEmail).toLowerCase();
-            const resolvedRole: UserRole =
-              userEmail === "admin@seediq.ai" || backendUser.username === "admin"
-                ? "Admin"
-                : userEmail === "researcher@quantum.org" || backendUser.username === "researcher"
-                ? "Researcher"
-                : backendUser.role || "Farmer";
+        const data = await res.json();
+        if (res.ok && data.status === "success" && data.user) {
+          const backendUser = data.user;
+          const userEmail = (backendUser.email || normalizedEmail).toLowerCase();
+          const resolvedRole: UserRole =
+            userEmail === "admin@seediq.ai" || backendUser.username === "admin"
+              ? "Admin"
+              : userEmail === "researcher@quantum.org" || backendUser.username === "researcher"
+              ? "Researcher"
+              : backendUser.role || "Farmer";
 
-            const authenticatedUser: User = {
-              id: backendUser.id,
-              username: backendUser.username,
-              email: backendUser.email || normalizedEmail,
-              name: backendUser.display_name || backendUser.username,
-              display_name: backendUser.display_name || backendUser.username,
-              role: resolvedRole,
-              isGuest: backendUser.role === "Guest",
-              provider: backendUser.provider || "supabase",
-            };
+          const authenticatedUser: User = {
+            id: backendUser.id,
+            username: backendUser.username,
+            email: backendUser.email || normalizedEmail,
+            name: backendUser.display_name || backendUser.username,
+            display_name: backendUser.display_name || backendUser.username,
+            role: resolvedRole,
+            isGuest: backendUser.role === "Guest",
+            provider: backendUser.provider || "supabase",
+          };
 
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
-            setUser(authenticatedUser);
-            setIsLoading(false);
-            await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
-            return { success: true, user: authenticatedUser };
-          } else if (data.status === "error") {
-            setIsLoading(false);
-            return { success: false, error: data.message || "Invalid email or password." };
-          }
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
+          setUser(authenticatedUser);
+          setIsLoading(false);
+          await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+          return { success: true, user: authenticatedUser };
+        } else if (data && data.message) {
+          setIsLoading(false);
+          return { success: false, error: data.message };
         }
-      } catch {}
+      } catch (backendErr) {
+        // network error
+      }
 
-      return { success: false, error: "Invalid email or password." };
+      return { success: false, error: "Incorrect email/username or password. Please verify your credentials." };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 2. Sign Up via Supabase Auth
+  // 2. Sign Up via Supabase Auth & Backend Persistence
   const requestRegistrationOtp = async (
     name: string,
     email: string,
@@ -390,70 +383,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const trimmedEmail = email.trim().toLowerCase();
       const trimmedName = name.trim();
 
-      // 1. Direct Supabase GoTrue Auth Sign Up
-      const { data, error } = await supabase.auth.signUp({
-        email: trimmedEmail,
-        password: password,
-        options: {
-          data: {
-            display_name: trimmedName,
-            name: trimmedName,
-            username: trimmedEmail.split("@")[0],
-            role: "Farmer",
+      // 1. Direct Supabase GoTrue Auth Sign Up (cloud sync)
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: trimmedEmail,
+          password: password,
+          options: {
+            data: {
+              display_name: trimmedName,
+              name: trimmedName,
+              username: trimmedEmail.split("@")[0],
+              role: "Farmer",
+            },
           },
-        },
-      });
-
-      if (error) {
-        // Also call backend register if needed as fallback
-        try {
-          const res = await fetch("/api/register/request-otp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password }),
-          });
-          const bData = await res.json();
-          if (res.ok && bData.status === "success") {
-            return { success: true, message: bData.message };
+        });
+        if (!error && data && (data.session || (data.user && data.user.confirmed_at))) {
+          const supaUser = data.user;
+          const token = data.session?.access_token;
+          if (token) {
+            localStorage.setItem("seediq_supabase_token", token);
           }
-        } catch {}
-
-        return { success: false, error: error.message || "Failed to initiate registration." };
-      }
-
-      // Check if user session was returned immediately (e.g. autoconfirm enabled)
-      if (data && (data.session || (data.user && data.user.confirmed_at))) {
-        const supaUser = data.user;
-        const token = data.session?.access_token;
-        if (token) {
-          localStorage.setItem("seediq_supabase_token", token);
+          const authenticatedUser: User = {
+            id: supaUser?.id || `supa_${Date.now()}`,
+            username: supaUser?.user_metadata?.username || trimmedEmail.split("@")[0],
+            email: supaUser?.email || trimmedEmail,
+            name: trimmedName,
+            display_name: trimmedName,
+            role: "Farmer",
+            isGuest: false,
+            provider: "supabase",
+          };
+          setUser(authenticatedUser);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
+          await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
+          return { success: true, message: "Account created successfully!" };
         }
-        const authenticatedUser: User = {
-          id: supaUser?.id || `supa_${Date.now()}`,
-          username: supaUser?.user_metadata?.username || trimmedEmail.split("@")[0],
-          email: supaUser?.email || trimmedEmail,
-          name: trimmedName,
-          display_name: trimmedName,
-          role: "Farmer",
-          isGuest: false,
-          provider: "supabase",
-        };
-        setUser(authenticatedUser);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
-        await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
-        return { success: true, message: "Account created successfully!" };
-      }
+      } catch {}
 
-      // Also notify backend so telemetry / audit is recorded
-      fetch("/api/register/request-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password }),
-      }).catch(() => {});
+      // 2. Guaranteed backend registration (persists password hash in DB + registry backup)
+      try {
+        const res = await fetch("/api/register/request-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password }),
+        });
+        const bData = await res.json();
+        if (res.ok && bData.status === "success") {
+          if (bData.user) {
+            const backendUser = bData.user;
+            const authenticatedUser: User = {
+              id: backendUser.id,
+              username: backendUser.username || trimmedEmail.split("@")[0],
+              email: backendUser.email || trimmedEmail,
+              name: backendUser.display_name || trimmedName,
+              display_name: backendUser.display_name || trimmedName,
+              role: "Farmer",
+              isGuest: false,
+              provider: "supabase",
+            };
+            setUser(authenticatedUser);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(authenticatedUser));
+          }
+          return {
+            success: true,
+            message: bData.message || "Account created successfully! You can sign in immediately.",
+          };
+        } else if (bData && bData.message) {
+          return { success: false, error: bData.message };
+        }
+      } catch (err: any) {
+        return { success: false, error: err?.message || "Failed to register account." };
+      }
 
       return {
         success: true,
-        message: `Supabase confirmation email & verification code sent to ${trimmedEmail}. Please check your inbox.`,
+        message: `Account created successfully for ${trimmedEmail}! You can sign in immediately.`,
       };
     } catch (e: any) {
       return { success: false, error: e?.message || "Registration failed." };

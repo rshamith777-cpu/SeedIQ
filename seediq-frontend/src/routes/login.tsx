@@ -42,13 +42,9 @@ function LoginPage() {
     e.preventDefault();
     setError(null);
 
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      setError("Please enter your Gmail address.");
-      return;
-    }
-    if (!trimmedEmail.includes("@")) {
-      setError("Please enter a valid Gmail / email address.");
+    const trimmedInput = email.trim();
+    if (!trimmedInput) {
+      setError("Please enter your email address or username.");
       return;
     }
     if (!password) {
@@ -57,13 +53,13 @@ function LoginPage() {
     }
 
     setLoading(true);
-    const result = await signIn(trimmedEmail, password);
+    const result = await signIn(trimmedInput, password);
     setLoading(false);
 
     if (result.success) {
       navigate({ to: "/dashboard" });
     } else {
-      setError(result.error || "Invalid email or password.");
+      setError(result.error || "Incorrect password or username. Please check your credentials.");
     }
   };
 
@@ -171,17 +167,17 @@ function LoginPage() {
           <form onSubmit={handleSignIn} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-emerald-200/80 mb-1.5">
-                Email Address
+                Email Address or Username
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-400/50">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your Gmail address"
+                  placeholder="Enter your email or username"
                   required
                   disabled={loading}
                   className="w-full pl-10 pr-4 py-3 bg-[#040a06]/90 border border-emerald-500/20 rounded-xl text-white placeholder-emerald-100/25 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 transition-all"

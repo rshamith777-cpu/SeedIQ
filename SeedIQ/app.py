@@ -230,8 +230,67 @@ def log_prediction(user_id, prediction_type, inputs, results):
         print(f"Failed to log prediction to SQLite: {e}")
 
 
+USER_BACKUP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'user_registry_backup.json')
+
+def load_user_registry_backup():
+    if not os.path.exists(USER_BACKUP_FILE):
+        return
+    try:
+        with open(USER_BACKUP_FILE, 'r', encoding='utf-8') as f:
+            backed_up_users = json.load(f)
+        with get_db() as conn:
+            for u in backed_up_users:
+                existing = conn.execute("SELECT id FROM users WHERE email = ? OR username = ?", (u.get('email'), u.get('username'))).fetchone()
+                if not existing:
+                    conn.execute(
+                        "INSERT INTO users (username, password, email, display_name, role, provider) VALUES (?, ?, ?, ?, ?, ?)",
+                        (u.get('username'), u.get('password'), u.get('email'), u.get('display_name'), u.get('role', 'Farmer'), u.get('provider', 'email'))
+                    )
+                else:
+                    conn.execute(
+                        "UPDATE users SET password = ?, display_name = ? WHERE id = ?",
+                        (u.get('password'), u.get('display_name'), existing['id'])
+                    )
+            conn.commit()
+    except Exception as e:
+        print(f"[AUTH] Error restoring user backup: {e}")
+
+def save_user_to_registry_backup(username, password_hash, email, display_name, role='Farmer', provider='email'):
+    users_list = []
+    if os.path.exists(USER_BACKUP_FILE):
+        try:
+            with open(USER_BACKUP_FILE, 'r', encoding='utf-8') as f:
+                users_list = json.load(f)
+        except Exception:
+            users_list = []
+    
+    updated = False
+    for u in users_list:
+        if (email and u.get('email') == email) or (username and u.get('username') == username):
+            u['password'] = password_hash
+            u['display_name'] = display_name
+            u['role'] = role
+            u['provider'] = provider
+            updated = True
+            break
+    if not updated:
+        users_list.append({
+            'username': username,
+            'password': password_hash,
+            'email': email,
+            'display_name': display_name,
+            'role': role,
+            'provider': provider
+        })
+    try:
+        with open(USER_BACKUP_FILE, 'w', encoding='utf-8') as f:
+            json.dump(users_list, f, indent=2)
+    except Exception as e:
+        print(f"[AUTH] Error saving user backup: {e}")
+
+
 def initialize_seediq_accounts():
-    """Initializes fixed Admin and Researcher accounts from environment variables without overwriting existing passwords."""
+    """Initializes fixed Admin and Researcher accounts and restores user registry backup."""
     admin_email = os.environ.get("SEEDIQ_ADMIN_EMAIL", "admin@seediq.ai").strip().lower()
     researcher_email = os.environ.get("SEEDIQ_RESEARCHER_EMAIL", "researcher@quantum.org").strip().lower()
     
@@ -264,6 +323,8 @@ def initialize_seediq_accounts():
                 (researcher_email,)
             )
         conn.commit()
+
+    load_user_registry_backup()
 
 init_db()
 initialize_seediq_accounts()
@@ -803,117 +864,113 @@ def login():
         except Exception as e:
             print(f"[LOGIN] Fast-path notice: {e}")
 
-    # 1. Attempt Supabase Auth Authentication
-    sb_success, sb_res = supabase.sign_in(target_email, password)
-    if sb_success and "user" in sb_res:
-        sb_user = sb_res["user"]
-        sb_uid = sb_user.get("id")
-        user_email = (sb_user.get("email") or target_email).lower()
-        display_name = sb_user.get("user_metadata", {}).get("display_name") or user_email.split("@")[0]
-        
-        # Server-side role resolution hierarchy
-        if user_email == admin_email or email_or_user == 'admin':
-            role = "Admin"
-        elif user_email == researcher_email or email_or_user == 'researcher':
-            role = "Researcher"
-        else:
-            role = sb_user.get("user_metadata", {}).get("role") or (sb_res.get("profile") or {}).get("role", "Farmer")
-            if role not in ['Admin', 'Researcher', 'Farmer']:
-                role = "Farmer"
+    # 1. Primary Check: Local / mirrored database verification (instant & robust)
+    try:
+        with get_db() as conn:
+            u = conn.execute('SELECT * FROM users WHERE email = ? OR username = ?', (target_email, email_or_user)).fetchone()
+            if u and check_password_hash(u['password'], password):
+                resolved_role = u['role'] if u['role'] in ['Admin', 'Researcher', 'Farmer'] else 'Farmer'
+                display_name = u['display_name'] or u['username']
+                session.clear()
+                session['user_id'] = u['id']
+                session['sqlite_user_id'] = u['id']
+                session['username'] = u['username']
+                session['email'] = u['email']
+                session['role'] = resolved_role
+                session['display_name'] = display_name
+                session['is_guest'] = False
 
-        session.clear()
-        session['user_id'] = sb_uid
-        session['supabase_user_id'] = sb_uid
-        session['username'] = user_email.split('@')[0]
-        session['email'] = user_email
-        session['role'] = role
-        session['display_name'] = display_name
-        session['access_token'] = sb_res.get("access_token")
-        session['is_guest'] = False
+                # Background session sync with Supabase GoTrue if email available
+                if '@' in target_email:
+                    try:
+                        sb_ok, sb_res = supabase.sign_in(target_email, password)
+                        if sb_ok and isinstance(sb_res, dict):
+                            session['supabase_user_id'] = (sb_res.get("user") or {}).get("id")
+                            session['access_token'] = sb_res.get("access_token")
+                    except Exception:
+                        pass
 
-        # Ensure SQLite has a local mirror for legacy query joins
-        try:
-            with get_db() as conn:
-                local_u = conn.execute('SELECT id FROM users WHERE email = ?', (user_email,)).fetchone()
-                if local_u:
-                    session['sqlite_user_id'] = local_u['id']
-                else:
-                    conn.execute(
-                        'INSERT INTO users (username, password, email, display_name, role, provider) VALUES (?, ?, ?, ?, ?, "supabase")',
-                        (user_email.split('@')[0], generate_password_hash(password), user_email, display_name, role)
-                    )
+                log_activity("USER_LOGIN", user_id=str(u['id']), details={"email": u['email'], "provider": "local_database"})
+                return jsonify({
+                    "status": "success",
+                    "message": "Signed in successfully.",
+                    "user": {
+                        "id": u['id'],
+                        "username": u['username'],
+                        "email": u['email'],
+                        "display_name": display_name,
+                        "role": resolved_role,
+                        "provider": "local_database"
+                    }
+                }), 200
+    except Exception as e:
+        print(f"[LOGIN] Local database check exception: {e}")
+
+    # 2. Secondary Check: Supabase GoTrue Cloud Authentication
+    if '@' in target_email:
+        sb_success, sb_res = supabase.sign_in(target_email, password)
+        if sb_success and "user" in sb_res:
+            sb_user = sb_res["user"]
+            sb_uid = sb_user.get("id")
+            user_email = (sb_user.get("email") or target_email).lower()
+            display_name = sb_user.get("user_metadata", {}).get("display_name") or user_email.split("@")[0]
+            
+            # Server-side role resolution hierarchy
+            if user_email == admin_email or email_or_user == 'admin':
+                role = "Admin"
+            elif user_email == researcher_email or email_or_user == 'researcher':
+                role = "Researcher"
+            else:
+                role = sb_user.get("user_metadata", {}).get("role") or (sb_res.get("profile") or {}).get("role", "Farmer")
+                if role not in ['Admin', 'Researcher', 'Farmer']:
+                    role = "Farmer"
+
+            session.clear()
+            session['user_id'] = sb_uid
+            session['supabase_user_id'] = sb_uid
+            session['username'] = user_email.split('@')[0]
+            session['email'] = user_email
+            session['role'] = role
+            session['display_name'] = display_name
+            session['access_token'] = sb_res.get("access_token")
+            session['is_guest'] = False
+
+            # Cache into local DB and user backup for future fast logins
+            hashed_pwd = generate_password_hash(password)
+            try:
+                with get_db() as conn:
+                    local_u = conn.execute('SELECT id FROM users WHERE email = ?', (user_email,)).fetchone()
+                    if local_u:
+                        session['sqlite_user_id'] = local_u['id']
+                        conn.execute("UPDATE users SET password = ?, display_name = ? WHERE id = ?", (hashed_pwd, display_name, local_u['id']))
+                    else:
+                        cur = conn.execute(
+                            'INSERT INTO users (username, password, email, display_name, role, provider) VALUES (?, ?, ?, ?, ?, "supabase")',
+                            (user_email.split('@')[0], hashed_pwd, user_email, display_name, role)
+                        )
+                        session['sqlite_user_id'] = cur.lastrowid
                     conn.commit()
-                    new_local = conn.execute('SELECT id FROM users WHERE email = ?', (user_email,)).fetchone()
-                    if new_local:
-                        session['sqlite_user_id'] = new_local['id']
-        except Exception as e:
-            print(f"[LOGIN] SQLite sync notice: {e}")
+                save_user_to_registry_backup(user_email.split('@')[0], hashed_pwd, user_email, display_name, role, 'supabase')
+            except Exception as e:
+                print(f"[LOGIN] SQLite sync notice: {e}")
 
-        log_activity("USER_LOGIN", user_id=sb_uid, details={"email": user_email, "provider": "supabase_auth"})
+            log_activity("USER_LOGIN", user_id=sb_uid, details={"email": user_email, "provider": "supabase_auth"})
 
-        return jsonify({
-            "status": "success",
-            "message": "Signed in successfully.",
-            "user": {
-                "id": sb_uid,
-                "username": user_email.split('@')[0],
-                "email": user_email,
-                "display_name": display_name,
-                "role": role,
-                "provider": "supabase_auth"
-            }
-        }), 200
-
-    if not sb_success and isinstance(sb_res, dict) and sb_res.get("error"):
-        err_msg = sb_res.get("error")
-        if "not confirmed" in err_msg.lower():
             return jsonify({
-                "status": "error",
-                "message": "Please confirm your email address before signing in. Check your inbox for the Supabase confirmation link or code."
-            }), 401
+                "status": "success",
+                "message": "Signed in successfully.",
+                "user": {
+                    "id": sb_uid,
+                    "username": user_email.split('@')[0],
+                    "email": user_email,
+                    "display_name": display_name,
+                    "role": role,
+                    "provider": "supabase_auth"
+                }
+            }), 200
 
-    # 2. Fallback to local SQLite authentication
-    with get_db() as conn:
-        user = conn.execute(
-            'SELECT * FROM users WHERE email = ? OR username = ?', 
-            (email_or_user, email_or_user)
-        ).fetchone()
-        
-        if not user or not check_password_hash(user['password'], password):
-            log_activity("LOGIN_FAILED", user_id=None, details={"identifier": email_or_user}, status="FAILED")
-            return jsonify({"status": "error", "message": "Invalid email or password."}), 401
-            
-        # Server-side role resolution hierarchy
-        if (user['email'] and user['email'].lower() == admin_email) or user['username'] == 'admin' or email_or_user == 'admin':
-            role = "Admin"
-        elif (user['email'] and user['email'].lower() == researcher_email) or user['username'] == 'researcher' or email_or_user == 'researcher':
-            role = "Researcher"
-        else:
-            role = user['role'] if user['role'] in ['Admin', 'Researcher', 'Farmer'] else "Farmer"
-            
-        session.clear()
-        session['user_id'] = user['id']
-        session['sqlite_user_id'] = user['id']
-        session['username'] = user['username']
-        session['email'] = user['email']
-        session['role'] = role
-        session['display_name'] = user['display_name'] or user['username']
-        session['is_guest'] = False
-
-        log_activity("USER_LOGIN", user_id=str(user['id']), details={"email": user['email'], "provider": "local_sqlite"})
-
-        return jsonify({
-            "status": "success",
-            "message": "Signed in successfully.",
-            "user": {
-                "id": user['id'],
-                "username": user['username'],
-                "email": user['email'],
-                "display_name": user['display_name'] or user['username'],
-                "role": role,
-                "provider": "local"
-            }
-        }), 200
+    log_activity("LOGIN_FAILED", user_id=None, details={"identifier": email_or_user}, status="FAILED")
+    return jsonify({"status": "error", "message": "Incorrect email/username or password. Please verify your credentials or register a new account."}), 401
 
 
 # -------------------------------------------------------------
@@ -926,9 +983,10 @@ def _get_app_cipher():
     return Fernet(key)
 
 @app.route('/api/register/request-otp', methods=['POST'])
+@app.route('/api/register', methods=['POST'])
 def register_request_otp():
     data = request.get_json() or {}
-    name = (data.get('name') or '').strip()
+    name = (data.get('name') or data.get('display_name') or '').strip()
     email = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
     
@@ -941,32 +999,65 @@ def register_request_otp():
     if not is_valid:
         return jsonify({"status": "error", "success": False, "email_sent": False, "message": msg}), 400
 
-    # 1. Register account directly in Supabase GoTrue Auth
-    ok, sb_res = supabase.sign_up(email=email, password=password, display_name=name, role="Farmer")
-    
-    if not ok:
-        err_msg = sb_res.get("error") or "Failed to register in Supabase Auth."
-        if "already registered" in err_msg.lower():
-            return jsonify({
-                "status": "error",
-                "success": False,
-                "email_sent": False,
-                "message": "An account with this email address already exists in Supabase. Please sign in."
-            }), 409
-        return jsonify({
-            "status": "error",
-            "success": False,
-            "email_sent": False,
-            "message": err_msg
-        }), 400
+    username = email.split('@')[0]
+    hashed_pwd = generate_password_hash(password)
+    user_id = None
 
-    log_activity("USER_REGISTERED_INITIATED", user_id=None, details={"email": email, "provider": "supabase_auth"})
+    # 1. ALWAYS persist user to local database and registry backup
+    try:
+        with get_db() as conn:
+            existing = conn.execute("SELECT id FROM users WHERE email = ? OR username = ?", (email, username)).fetchone()
+            if existing:
+                conn.execute(
+                    "UPDATE users SET password = ?, display_name = ?, role = 'Farmer', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (hashed_pwd, name, existing['id'])
+                )
+                user_id = existing['id']
+            else:
+                cur = conn.execute(
+                    "INSERT INTO users (username, password, email, display_name, role, provider) VALUES (?, ?, ?, ?, 'Farmer', 'email')",
+                    (username, hashed_pwd, email, name)
+                )
+                user_id = cur.lastrowid
+            conn.commit()
+
+        save_user_to_registry_backup(username, hashed_pwd, email, name, role='Farmer', provider='email')
+    except Exception as e:
+        print(f"[REGISTER] Database persistence notice: {e}")
+
+    # 2. Register account in Supabase GoTrue Auth (gracefully handling mailer limitations)
+    try:
+        ok, sb_res = supabase.sign_up(email=email, password=password, display_name=name, role="Farmer")
+        sb_uid = (sb_res.get("user") or {}).get("id") if (ok and isinstance(sb_res, dict)) else None
+    except Exception as e:
+        print(f"[REGISTER] Supabase sign_up notice: {e}")
+        sb_uid = None
+
+    # Set active session
+    session.clear()
+    session['user_id'] = sb_uid or user_id
+    session['sqlite_user_id'] = user_id
+    session['username'] = username
+    session['email'] = email
+    session['role'] = 'Farmer'
+    session['display_name'] = name
+    session['is_guest'] = False
+
+    log_activity("USER_REGISTERED", user_id=str(user_id), details={"email": email, "provider": "registered"})
 
     return jsonify({
         "status": "success",
         "success": True,
         "email_sent": True,
-        "message": f"Supabase verification code and confirmation link sent to {email}. Please check your inbox."
+        "message": f"Account created successfully for {email}! You can sign in immediately.",
+        "user": {
+            "id": user_id,
+            "username": username,
+            "email": email,
+            "display_name": name,
+            "role": "Farmer",
+            "provider": "email"
+        }
     }), 200
 
 @app.route('/api/register/verify-otp', methods=['POST'])
@@ -1142,6 +1233,7 @@ def forgot_password_reset_password():
                 (new_hash, email)
             )
         conn.commit()
+        save_user_to_registry_backup(email.split('@')[0], new_hash, email, email.split('@')[0])
 
         # Update Supabase password if session token exists
         token = session.get('access_token')

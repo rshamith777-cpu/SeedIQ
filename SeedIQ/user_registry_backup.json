@@ -1,0 +1,34 @@
+[
+  {
+    "username": "rshamith777",
+    "password": "scrypt:32768:8:1$m7Tv1cJ8B0q85J5p$ed22e71bb79c7ce571f0bac68094fe028eb4c7861efa96d2045bb359771552066295107b4c4b18fd5ca81381166dcb45373805be83511763d5b700bbf3826863",
+    "email": "rshamith777@gmail.com",
+    "display_name": "r",
+    "role": "Farmer",
+    "provider": "supabase_auth"
+  },
+  {
+    "username": "admin",
+    "password": "scrypt:32768:8:1$AvLAAhP6Sq7ujMgH$205cfdd94e378c5e45422eab2da58668b669f1731b4ede0b2a36899dbdd8d6e77219b42c97884d644705c48187a20d9ab2fae55c99008fcdab180cadd3ee5c5a",
+    "email": "admin@seediq.ai",
+    "display_name": "System Administrator",
+    "role": "Admin",
+    "provider": "local"
+  },
+  {
+    "username": "researcher",
+    "password": "scrypt:32768:8:1$AZEJHvw8Zz5LMi6C$3935a55adf9651bafbee06bea7c215fe4d1565cb3324df99848ce0f79a755150c964fd73c5d6cf09797c07d160a1b6b6a34698d0fd3624d03223858cfce0dfd9",
+    "email": "researcher@quantum.org",
+    "display_name": "Lead Researcher",
+    "role": "Researcher",
+    "provider": "local"
+  },
+  {
+    "username": "farmer_live_test",
+    "password": "scrypt:32768:8:1$Qj5ry5Cz0nXlLrod$217c0841cd4faf1225fee463deea886c4425df0322671a19c8f8125fdb3afb94329937ee129cc5faf535bef5c54aa41d2b202fb9e5aa028bf1621d1441d8f095",
+    "email": "farmer_live_test@gmail.com",
+    "display_name": "Verified Farmer",
+    "role": "Farmer",
+    "provider": "email"
+  }
+]
