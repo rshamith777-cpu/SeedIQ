@@ -266,6 +266,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           : rawInput;
 
       // 1. Primary: Direct Supabase GoTrue Auth (if input has '@')
+      let specificError: string | null = null;
       if (normalizedEmail.includes("@")) {
         try {
           const { data: supaData, error: supaError } = await supabase.auth.signInWithPassword({
@@ -314,8 +315,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
             return { success: true, user: authenticatedUser };
           }
-        } catch (err) {
-          // Fall through to backend API
+
+          if (supaError) {
+            specificError = supaError.message;
+          }
+        } catch (err: any) {
+          specificError = err?.message || null;
         }
       }
 
@@ -358,7 +363,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false);
           await triggerLoginAnimation(authenticatedUser.name, authenticatedUser.role);
           return { success: true, user: authenticatedUser };
-        } else if (data && data.message) {
+        } else if (data && data.message && (!specificError || !specificError.includes("Email not confirmed"))) {
           setIsLoading(false);
           return { success: false, error: data.message };
         }
@@ -366,7 +371,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // network error
       }
 
-      return { success: false, error: "Incorrect email/username or password. Please verify your credentials." };
+      if (specificError && specificError.includes("Email not confirmed")) {
+        return {
+          success: false,
+          error: "Email not confirmed in Supabase. In Supabase Dashboard, toggle off 'Confirm email' under Authentication -> Providers -> Email, or confirm in the SQL editor.",
+        };
+      }
+
+      return {
+        success: false,
+        error: specificError || "Incorrect email/username or password. Please verify your credentials.",
+      };
     } finally {
       setIsLoading(false);
     }
